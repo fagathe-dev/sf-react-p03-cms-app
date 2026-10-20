@@ -1,0 +1,24 @@
+###> symfony/framework-bundle ###
+/.env.local
+/.env.local.php
+/.env.*.local
+!/.env
+/public/bundles/
+/var/
+/vendor/
+###< symfony/framework-bundle ###
+
+###> uploads ###
+/public/uploads/*
+!/public/uploads/.gitkeep
+###< uploads ###
+
+###> lexik/jwt-authentication-bundle ###
+/config/jwt/*.pem
+/config/jwt/*.key
+###< lexik/jwt-authentication-bundle ###
+
+###> phpunit ###
+/phpunit.xml
+.phpunit.cache/
+###< phpunit ###

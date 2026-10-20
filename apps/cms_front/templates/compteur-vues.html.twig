@@ -1,0 +1,44 @@
+{# templates/post/show.html.twig #}
+<script>
+(function () {
+    // Bloque les navigateurs automatisés (Selenium, Puppeteer, Playwright)
+    if (navigator.webdriver) return;
+
+    const trackUrl = "{{ path('app_post_track_view', { id: post.id }) }}";
+    const storageKey = "viewed_post_{{ post.id }}_" + new Date().toISOString().slice(0, 10);
+
+    // Évite même d'appeler le serveur si le navigateur sait déjà qu'il l'a lu aujourd'hui
+    if (localStorage.getItem(storageKey)) return;
+
+    let timer = null;
+
+    function sendViewPing() {
+        localStorage.setItem(storageKey, "1");
+        if (navigator.sendBeacon) {
+            navigator.sendBeacon(trackUrl);
+        } else {
+            fetch(trackUrl, { method: "POST", keepalive: true });
+        }
+    }
+
+    function startTimer() {
+        if (document.visibilityState === "visible" && !timer) {
+            timer = setTimeout(sendViewPing, 5000); // 5 secondes de présence réelle
+        }
+    }
+
+    function clearTimerIfHidden() {
+        if (document.visibilityState === "hidden" && timer) {
+            clearTimeout(timer);
+            timer = null;
+        }
+    }
+
+    document.addEventListener("visibilitychange", function () {
+        if (document.visibilityState === "visible") startTimer();
+        else clearTimerIfHidden();
+    });
+
+    startTimer();
+})();
+</script>

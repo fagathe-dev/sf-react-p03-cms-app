@@ -1,0 +1,24 @@
+{
+    "name": "fagathe/cms-core",
+    "description": "Core SEO library for CMS Validation and Front-end generation",
+    "type": "library",
+    "require": {
+        "php": ">=8.1",
+        "symfony/validator": "^8.1",
+        "symfony/http-foundation": "^8.1",
+        "symfony/routing": "^8.1",
+        "symfony/serializer": "^8.1",
+        "symfony/http-kernel": "^8.1",
+        "symfony/dependency-injection": "^8.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Fagathe\\CmsCore\\": "src/"
+        }
+    },
+    "extra": {
+        "symfony": {
+            "bundle": "Fagathe\\CmsCore\\CmsCoreBundle"
+        }
+    }
+}

@@ -1,0 +1,56 @@
+{# apps/cms_front/templates/seo/seo-meta.html.twig #}
+{% if seo is defined and seo is not null %}
+  {% set meta = generate_seo_meta(seo, seo_subject|default(null)) %}
+
+  {% if meta.title is not empty %}
+    <title>{{ meta.title }}</title>
+  {% endif %}
+
+  {% if meta.description is not empty %}
+    <meta name="description" content="{{ meta.description }}">
+  {% endif %}
+
+  {% if meta.robots is not empty %}
+    <meta name="robots" content="{{ meta.robots }}">
+  {% endif %}
+
+  {% if meta.canonical is not empty %}
+    <link rel="canonical" href="{{ meta.canonical }}">
+  {% endif %}
+
+  {# --- Balises OpenGraph & Réseaux Sociaux --- #}
+  {% if meta.og is defined %}
+    <meta property="og:type" content="{{ meta.og.type }}">
+    <meta property="og:site_name" content="{{ meta.og.site_name }}">
+    <meta property="og:title" content="{{ meta.og.title }}">
+    {% if meta.og.description is not empty %}
+      <meta property="og:description" content="{{ meta.og.description }}">
+    {% endif %}
+    <meta property="og:url" content="{{ meta.og.url }}">
+    {% if meta.og.image is not empty %}
+      <meta property="og:image" content="{{ meta.og.image }}">
+    {% endif %}
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ meta.og.title }}">
+    {% if meta.og.description is not empty %}
+      <meta name="twitter:description" content="{{ meta.og.description }}">
+    {% endif %}
+    {% if meta.og.image is not empty %}
+      <meta name="twitter:image" content="{{ meta.og.image }}">
+    {% endif %}
+  {% endif %}
+
+  {# --- Balises Géographiques (GEO / Local SEO) --- #}
+  {% if meta.geo is defined and meta.geo is not empty %}
+    {% if meta.geo.region is defined %}
+      <meta name="geo.region" content="{{ meta.geo.region }}">
+    {% endif %}
+    {% if meta.geo.placename is defined %}
+      <meta name="geo.placename" content="{{ meta.geo.placename }}">
+    {% endif %}
+    {% if meta.geo.position is defined %}
+      <meta name="geo.position" content="{{ meta.geo.position }}">
+      <meta name="ICBM" content="{{ meta.geo.position|replace({';': ', '}) }}">
+    {% endif %}
+  {% endif %}
+{% endif %}

@@ -1,0 +1,18 @@
+###> symfony/framework-bundle ###
+/.env.local
+/.env.local.php
+/.env.*.local
+!/.env
+/public/bundles/
+/var/
+/vendor/
+###< symfony/framework-bundle ###
+
+###> symfony/asset-mapper ###
+/assets/vendor/
+###< symfony/asset-mapper ###
+
+###> phpunit ###
+/phpunit.xml
+.phpunit.cache/
+###< phpunit ###

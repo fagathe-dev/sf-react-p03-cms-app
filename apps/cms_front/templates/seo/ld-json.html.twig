@@ -1,0 +1,10 @@
+{# apps/cms_front/templates/seo/ld-json.html.twig #}
+{% if seo is defined and seo is not null %}
+  {% set schema = generate_ld_json(seo, seo_subject|default(null)) %}
+
+  {% if schema is not empty %}
+    <script type="application/ld+json">
+      {{ schema|json_encode(constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_UNESCAPED_UNICODE') b-or constant('JSON_PRETTY_PRINT'))|raw }}
+    </script>
+  {% endif %}
+{% endif %}
