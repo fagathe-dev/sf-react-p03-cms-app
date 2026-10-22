@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace Fagathe\CmsCore\Service;
 
-use App\Entity\User;
-use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Fagathe\CmsCore\Enum\Auth\UserRole;
+use Fagathe\CmsCore\Entity\User;
 use Fagathe\CmsCore\Enum\Auth\UserRequestTypeEnum;
+use Fagathe\CmsCore\Enum\Auth\UserRole;
+use Fagathe\CmsCore\Repository\UserRepository;
 use Fagathe\CorePhp\Enum\LoggerLevelEnum;
 use Fagathe\CorePhp\Http\RequestTrait;
 use Fagathe\CorePhp\Http\ResponseTrait;
 use Fagathe\CorePhp\Trait\DatetimeTrait;
 use Fagathe\CorePhp\Trait\LoggerTrait;
-use Symfony\Bundle\SecurityBundle\Security;
+use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -34,7 +34,7 @@ final class AuthService
         private readonly SerializerInterface $serializer,
         private readonly UserPasswordHasherInterface $hasher,
         private readonly UserRequestService $userRequestService,
-        private readonly Security $security,
+        private readonly ?JWTTokenManagerInterface $jwtManager = null,
     ) {}
 
     public function register(Request $request): object
@@ -51,10 +51,12 @@ final class AuthService
                     AbstractNormalizer::IGNORED_ATTRIBUTES => [
                         'id',
                         'roles',
+                        'role',
                         'createdAt',
                         'updatedAt',
                         'tags',
                         'posts',
+                        'comments',
                         'emailVerifiedAt',
                         'isVerified',
                     ],
@@ -100,15 +102,76 @@ final class AuthService
             $this->generateLog(
                 LoggerLevelEnum::Critical,
                 [
-                    'message' => 'Erreur critique lors de l\'inscription',
-                    'user'    => $user->getUsername(),
-                    'error'   => $e->getMessage(),
+                    'message'   => 'Erreur critique lors de l\'inscription',
+                    'data'      => ['user' => $user->getUsername()],
+                    'exception' => $e->getMessage(),
                 ],
                 ['action' => 'user.register.critical_error']
             );
 
-            return $this->sendJson(['message' => 'Erreur interne lors de la création du compte.'], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->sendJson(
+                ['message' => 'Erreur interne lors de la création du compte.'],
+                Response::HTTP_INTERNAL_SERVER_ERROR
+            );
         }
+    }
+
+    public function login(Request $request): object
+    {
+        $data = json_decode($request->getContent(), true);
+        if (!is_array($data)) {
+            return $this->sendJson(['message' => 'Format de données JSON invalide.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $identifier = trim((string) ($data['username'] ?? $data['email'] ?? ''));
+        $password = (string) ($data['password'] ?? '');
+
+        if ($identifier === '' || $password === '') {
+            return $this->sendJson(
+                ['message' => 'Identifiant et mot de passe obligatoires.'],
+                Response::HTTP_UNPROCESSABLE_ENTITY
+            );
+        }
+
+        $user = $this->userRepository->findOneBy(['username' => $identifier])
+            ?? $this->userRepository->findOneBy(['email' => $identifier]);
+
+        if (!$user instanceof User) {
+            $this->hasher->hashPassword(new User(), $password);
+
+            return $this->sendJson(['message' => 'Identifiants invalides.'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        if (!$this->hasher->isPasswordValid($user, $password)) {
+            return $this->sendJson(['message' => 'Identifiants invalides.'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        if (!$user->isVerified()) {
+            return $this->sendJson(
+                ['message' => 'Veuillez vérifier votre adresse e-mail avant de vous connecter.'],
+                Response::HTTP_FORBIDDEN
+            );
+        }
+
+        $payload = ['user' => $user];
+        if ($this->jwtManager !== null) {
+            $payload['token'] = $this->jwtManager->create($user);
+        }
+
+        $this->generateLog(
+            LoggerLevelEnum::Info,
+            [
+                'message' => 'Connexion utilisateur réussie',
+                'data'    => ['user_id' => (string) $user->getId()],
+            ],
+            ['action' => 'user.login.success', 'uid' => (string) $user->getId()]
+        );
+
+        return $this->sendJson(
+            $payload,
+            Response::HTTP_OK,
+            context: ['groups' => ['user.read']]
+        );
     }
 
     public function verifyOtp(Request $request): object
@@ -116,7 +179,7 @@ final class AuthService
         $data = json_decode($request->getContent(), true) ?? [];
         $code = trim((string) ($data['code'] ?? ''));
 
-        if (empty($code)) {
+        if ($code === '') {
             return $this->sendJson(['message' => 'Le code OTP est obligatoire.'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
@@ -137,18 +200,45 @@ final class AuthService
         ]);
     }
 
-    public function forgotPassword(Request $request): object
+    public function resendOtp(Request $request): object
     {
         $data = json_decode($request->getContent(), true) ?? [];
         $email = trim((string) ($data['email'] ?? ''));
 
-        if (empty($email)) {
+        if ($email === '') {
             return $this->sendJson(['message' => 'L\'adresse e-mail est obligatoire.'], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
         $user = $this->userRepository->findOneBy(['email' => $email]);
 
-        if ($user) {
+        if ($user instanceof User && !$user->isVerified()) {
+            $otpRequest = $this->userRequestService->createRequest(
+                $user,
+                UserRequestTypeEnum::OtpRegister,
+                ttlMinutes: 15,
+                isOtp: true
+            );
+
+            // TODO : Expédition e-mail avec $otpRequest?->getCode()
+        }
+
+        return $this->sendJson([
+            'message' => 'Si ce compte est en attente d\'activation, un nouveau code vous a été envoyé.',
+        ]);
+    }
+
+    public function forgotPassword(Request $request): object
+    {
+        $data = json_decode($request->getContent(), true) ?? [];
+        $email = trim((string) ($data['email'] ?? ''));
+
+        if ($email === '') {
+            return $this->sendJson(['message' => 'L\'adresse e-mail est obligatoire.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $user = $this->userRepository->findOneBy(['email' => $email]);
+
+        if ($user instanceof User) {
             $userRequest = $this->userRequestService->createRequest(
                 $user,
                 UserRequestTypeEnum::PasswordReset,
@@ -170,14 +260,20 @@ final class AuthService
         $token = trim((string) ($data['token'] ?? ''));
         $password = (string) ($data['password'] ?? '');
 
-        if (empty($token) || empty($password)) {
-            return $this->sendJson(['message' => 'Jeton et nouveau mot de passe obligatoires.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+        if ($token === '' || $password === '') {
+            return $this->sendJson(
+                ['message' => 'Jeton et nouveau mot de passe obligatoires.'],
+                Response::HTTP_UNPROCESSABLE_ENTITY
+            );
         }
 
         $userRequest = $this->userRequestService->findValidRequest($token, UserRequestTypeEnum::PasswordReset);
 
         if (!$userRequest) {
-            return $this->sendJson(['message' => 'Le lien de réinitialisation est invalide ou a expiré.'], Response::HTTP_BAD_REQUEST);
+            return $this->sendJson(
+                ['message' => 'Le lien de réinitialisation est invalide ou a expiré.'],
+                Response::HTTP_BAD_REQUEST
+            );
         }
 
         $user = $userRequest->getUser();

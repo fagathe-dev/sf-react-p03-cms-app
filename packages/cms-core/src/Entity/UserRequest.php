@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Entity;
+namespace Fagathe\CmsCore\Entity;
 
 use Fagathe\CmsCore\Enum\Auth\UserRequestTypeEnum;
-use App\Repository\UserRequestRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Fagathe\CmsCore\Repository\UserRequestRepository;
 use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Uid\Uuid;

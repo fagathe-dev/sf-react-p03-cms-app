@@ -14,7 +14,7 @@ const StyledItem = styled.button<{ $variant: 'default' | 'danger' }>`
   align-items: center;
   gap: ${({ theme }) => theme.spacing[2]};
   width: 100%;
-  padding: ${({ theme }) => `${theme.spacing[2]}${theme.spacing[2.5]}`};
+  padding: ${({ theme }) => `${theme.spacing[2]} ${theme.spacing[2.5]}`};
   border: none;
   background: transparent;
   border-radius: ${({ theme }) => theme.radii.sm};

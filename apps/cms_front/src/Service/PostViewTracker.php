@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace App\Service;
 
-use App\Entity\Post;
-use App\Repository\PostViewRepository;
-use Fagathe\CmsCore\Enum\PostStatus;
+use Fagathe\CmsCore\Entity\Post;
+use Fagathe\CmsCore\Enum\Post\PostStatus;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;

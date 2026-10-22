@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Fagathe\CmsCore\Contract;
 
-use Fagathe\CmsCore\Enum\SeoTargetType;
+use Fagathe\CmsCore\Enum\Seo\SeoTargetType;
 
 interface SeoMetadataInterface
 {

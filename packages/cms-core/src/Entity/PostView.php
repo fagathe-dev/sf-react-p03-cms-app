@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Entity;
+namespace Fagathe\CmsCore\Entity;
 
-use App\Repository\PostViewRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Fagathe\CmsCore\Repository\PostViewRepository;
 use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Uid\Uuid;
 

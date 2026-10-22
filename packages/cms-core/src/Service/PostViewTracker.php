@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Fagathe\CmsCore\Service;
 
-use App\Entity\Post;
-use App\Entity\User;
-use App\Repository\PostViewRepository;
-use Fagathe\CmsCore\Enum\PostStatus;
+use Fagathe\CmsCore\Entity\Post;
+use Fagathe\CmsCore\Entity\User;
+use Fagathe\CmsCore\Enum\Post\PostStatus;
+use Fagathe\CmsCore\Repository\PostViewRepository;
 use Fagathe\CorePhp\Enum\DeviceEnum;
 use Fagathe\CorePhp\Http\Cookie;
 use Fagathe\CorePhp\Utils\DetectDevice;
@@ -52,7 +52,7 @@ class PostViewTracker
             Cookie::set($cookieKey, '1', [
                 'expires'  => $endOfDay,
                 'path'     => '/',
-                'secure'   => true,
+                'secure'   => $request->isSecure(),
                 'httponly' => true,
                 'samesite' => 'Lax',
             ]);

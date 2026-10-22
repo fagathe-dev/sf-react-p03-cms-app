@@ -1,48 +1,53 @@
 security:
-  password_hashers:
-    # On cible bien la nouvelle entité dans le package
-    Fagathe\CmsCore\Entity\User: 'auto'
-    Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
+    password_hashers:
+        Fagathe\CmsCore\Entity\User: 'auto'
+        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
 
-  providers:
-    app_user_provider:
-      entity:
-        class: Fagathe\CmsCore\Entity\User
-        property: email # Le login se fait via l'adresse e-mail
+    # Hiérarchie des rôles en cascade (du plus bas au plus haut)
+    role_hierarchy:
+        ROLE_CONTRIBUTOR: [ROLE_USER]
+        ROLE_EDITOR: [ROLE_CONTRIBUTOR]
+        ROLE_MODERATOR: [ROLE_EDITOR]
+        ROLE_MANAGER: [ROLE_MODERATOR]
+        ROLE_ADMIN: [ROLE_MANAGER]
+        ROLE_SUPER_ADMIN: [ROLE_ADMIN, ROLE_ALLOWED_TO_SWITCH]
 
-  firewalls:
-    dev:
-      pattern: ^/(_profiler|_wdt|assets|build)/
-      security: false
+    providers:
+        app_user_provider:
+            entity:
+                class: Fagathe\CmsCore\Entity\User
+                property: email
 
-    login:
-      pattern: ^/api/auth/login
-      stateless: true
-      json_login:
-        check_path: /api/auth/login
-        username_path: email # Le payload JSON envoyé par React devra être { "email": "...", "password": "..." }
-        password_path: password
-        success_handler: lexik_jwt_authentication.handler.authentication_success
-        failure_handler: lexik_jwt_authentication.handler.authentication_failure
+    firewalls:
+        dev:
+            pattern: ^/(_profiler|_wdt|assets|build)/
+            security: false
 
-    api:
-      pattern: ^/api
-      stateless: true
-      jwt: ~
+        login:
+            pattern: ^/api/auth/login
+            stateless: true
+            json_login:
+                check_path: /api/auth/login
+                username_path: email
+                password_path: password
+                success_handler: lexik_jwt_authentication.handler.authentication_success
+                failure_handler: lexik_jwt_authentication.handler.authentication_failure
 
-  access_control:
-    - { path: ^/api/auth/login, roles: PUBLIC_ACCESS }
-    - { path: ^/api/auth/register, roles: PUBLIC_ACCESS }
-    - { path: ^/api/health-check, roles: PUBLIC_ACCESS }
-    - { path: ^/api/, roles: IS_AUTHENTICATED_FULLY }
+        api:
+            pattern: ^/api
+            stateless: true
+            jwt: ~
+
+    access_control:
+        - { path: ^/api/auth/(login|register|verify-otp|resend-otp|forgot-password|reset-password), roles: PUBLIC_ACCESS }
+        - { path: ^/api/health-check, roles: PUBLIC_ACCESS }
+        - { path: ^/api/, roles: IS_AUTHENTICATED_FULLY }
 
 when@test:
-  security:
-    password_hashers:
-      # Password hashers are resource-intensive by design to ensure security.
-      # In tests, it's safe to reduce their cost to improve performance.
-      Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
-        algorithm: auto
-        cost: 4 # Lowest possible value for bcrypt
-        time_cost: 3 # Lowest possible value for argon
-        memory_cost: 10 # Lowest possible value for argon
+    security:
+        password_hashers:
+            Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
+                algorithm: auto
+                cost: 4
+                time_cost: 3
+                memory_cost: 10

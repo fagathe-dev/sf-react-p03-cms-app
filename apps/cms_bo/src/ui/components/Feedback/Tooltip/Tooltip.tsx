@@ -13,7 +13,7 @@ export interface TooltipProps extends BaseComponentProps {
 const Bubble = styled.span<{ $placement: TooltipPlacement }>`
   position: absolute;
   z-index: 1200;
-  padding: ${({ theme }) => `${theme.spacing[1]}${theme.spacing[2]}`};
+  padding: ${({ theme }) => `${theme.spacing[1]} ${theme.spacing[2]}`};
   font-size: ${({ theme }) => theme.typography.sizes.xs};
   font-weight: ${({ theme }) => theme.typography.weights.medium};
   color: ${({ theme }) => theme.colors.white};

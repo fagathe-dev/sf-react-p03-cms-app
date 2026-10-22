@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Fagathe\CmsCore\Service;
 
-use App\Entity\User;
-use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Fagathe\CmsCore\Dto\Account\ChangeEmailDto;
 use Fagathe\CmsCore\Dto\Account\ChangePasswordDto;
 use Fagathe\CmsCore\Dto\Account\UpdateAccountDto;
 use Fagathe\CmsCore\Dto\Account\UploadAvatarDto;
+use Fagathe\CmsCore\Entity\User;
+use Fagathe\CmsCore\Repository\UserRepository;
 use Fagathe\CorePhp\Enum\LoggerLevelEnum;
 use Fagathe\CorePhp\File\FileTrait;
 use Fagathe\CorePhp\Http\RequestTrait;
@@ -125,14 +125,17 @@ final class AccountService
             $this->generateLog(
                 LoggerLevelEnum::Critical,
                 [
-                    'message' => 'Erreur critique lors de la mise à jour du profil',
-                    'user_id' => (string) $user->getId(),
-                    'error'   => $e->getMessage(),
+                    'message'   => 'Erreur critique lors de la mise à jour du profil',
+                    'data'      => ['user_id' => (string) $user->getId()],
+                    'exception' => $e->getMessage(),
                 ],
                 ['action' => 'account.update.critical_error']
             );
 
-            return $this->sendJson(['message' => 'Erreur interne lors de la mise à jour du profil.'], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->sendJson(
+                ['message' => 'Erreur interne lors de la mise à jour du profil.'],
+                Response::HTTP_INTERNAL_SERVER_ERROR
+            );
         }
     }
 
@@ -190,7 +193,10 @@ final class AccountService
         }
 
         if (!$this->hasher->isPasswordValid($user, $dto->currentPassword)) {
-            return $this->sendJson(['message' => 'Le mot de passe actuel est incorrect.'], Response::HTTP_UNPROCESSABLE_ENTITY);
+            return $this->sendJson(
+                ['message' => 'Le mot de passe actuel est incorrect.'],
+                Response::HTTP_UNPROCESSABLE_ENTITY
+            );
         }
 
         $user->setPassword($this->hasher->hashPassword($user, $dto->newPassword));
@@ -235,14 +241,17 @@ final class AccountService
             $this->generateLog(
                 LoggerLevelEnum::Critical,
                 [
-                    'message' => 'Erreur critique lors de l\'upload de l\'avatar',
-                    'user_id' => (string) $user->getId(),
-                    'error'   => $e->getMessage(),
+                    'message'   => 'Erreur critique lors de l\'upload de l\'avatar',
+                    'data'      => ['user_id' => (string) $user->getId()],
+                    'exception' => $e->getMessage(),
                 ],
                 ['action' => 'account.avatar.update.error']
             );
 
-            return $this->sendJson(['message' => 'Erreur interne lors de la mise à jour de l\'avatar.'], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->sendJson(
+                ['message' => 'Erreur interne lors de la mise à jour de l\'avatar.'],
+                Response::HTTP_INTERNAL_SERVER_ERROR
+            );
         }
     }
 
@@ -265,14 +274,17 @@ final class AccountService
             $this->generateLog(
                 LoggerLevelEnum::Critical,
                 [
-                    'message' => 'Erreur critique lors de la suppression du compte',
-                    'user_id' => (string) $user->getId(),
-                    'error'   => $e->getMessage(),
+                    'message'   => 'Erreur critique lors de la suppression du compte',
+                    'data'      => ['user_id' => (string) $user->getId()],
+                    'exception' => $e->getMessage(),
                 ],
                 ['action' => 'account.delete.critical_error']
             );
 
-            return $this->sendJson(['message' => 'Erreur interne lors de la suppression du compte.'], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->sendJson(
+                ['message' => 'Erreur interne lors de la suppression du compte.'],
+                Response::HTTP_INTERNAL_SERVER_ERROR
+            );
         }
     }
 

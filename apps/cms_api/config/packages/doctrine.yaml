@@ -18,6 +18,9 @@ doctrine:
                 alias: CmsCore
         controller_resolver:
             auto_mapping: false
+        dql:
+            numeric_functions:
+                MATCH: DoctrineExtensions\Query\Mysql\MatchAgainst
 
 when@test:
     doctrine:

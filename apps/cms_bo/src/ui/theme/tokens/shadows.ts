@@ -1,11 +1,13 @@
 export const getShadows = (mode: 'light' | 'dark') => {
   if (mode === 'dark') {
     return {
+      // Une ombre noire est invisible sur fond quasi noir : on ajoute un anneau blanc
+      // très translucide (liseré lumineux) qui détache la carte, + l'ombre douce pour la profondeur.
       none: 'none',
-      sm: '0 1px 3px rgba(0, 0, 0, 0.3)',
-      base: '0 4px 15px -3px rgba(0, 0, 0, 0.4)',
-      md: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
-      lg: '0 20px 40px -5px rgba(0, 0, 0, 0.6)',
+      sm: '0 1px 3px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04)',
+      base: '0 4px 15px -3px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.05)',
+      md: '0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.07)',
+      lg: '0 20px 40px -5px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.09)',
       inset: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.4)',
     };
   }

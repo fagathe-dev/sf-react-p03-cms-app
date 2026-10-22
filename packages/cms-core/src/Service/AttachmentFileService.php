@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Fagathe\CmsCore\Service;
 
-use App\Entity\AbstractFile;
-use App\Entity\Post;
-use App\Entity\PostMedia;
-use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
+use Fagathe\CmsCore\Entity\AbstractFile;
+use Fagathe\CmsCore\Entity\Post;
+use Fagathe\CmsCore\Entity\PostMedia;
+use Fagathe\CmsCore\Entity\User;
 use Fagathe\CorePhp\Enum\LoggerLevelEnum;
 use Fagathe\CorePhp\File\FileTrait;
 use Fagathe\CorePhp\File\MimeType;
@@ -18,7 +18,6 @@ use Fagathe\CorePhp\Trait\LoggerTrait;
 use Fagathe\CorePhp\Uploader\FileUploadException;
 use Fagathe\CorePhp\Uploader\UploaderService;
 use Fagathe\CorePhp\Uploader\UploaderValidationService;
-use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Throwable;
 
@@ -27,11 +26,11 @@ final class AttachmentFileService
     use LoggerTrait, DatetimeTrait, FileTrait, RequestTrait;
 
     private const MAX_SIZE = 50 * 1024 * 1024; // 50 Mo
+    private const MAX_THUMBNAIL_SIZE = 10 * 1024 * 1024; // 10 Mo
 
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly UploaderService $uploader,
-        private readonly Security $security,
         private readonly ?string $defaultUri = null,
     ) {}
 
@@ -59,7 +58,7 @@ final class AttachmentFileService
             ->setPost($post)
             ->setAlt($alt)
             ->setOriginalName($uploadResult->originalName)
-            ->setFilePath($this->formatFileUri($uploadResult->relativePath))
+            ->setFilePath((string) $this->formatFileUri($uploadResult->relativePath))
             ->setMimeType($uploadResult->mimeType)
             ->setExtension($uploadResult->extension)
             ->setSize($uploadResult->size)
@@ -74,9 +73,11 @@ final class AttachmentFileService
             LoggerLevelEnum::Info,
             [
                 'message' => 'Média d\'article uploadé avec succès',
-                'post_id' => (string) $post->getId(),
-                'file'    => $uploadResult->originalName,
-                'size'    => $this->formatFileSize($uploadResult->size),
+                'data'    => [
+                    'post_id' => (string) $post->getId(),
+                    'file'    => $uploadResult->originalName,
+                    'size'    => $this->formatFileSize($uploadResult->size),
+                ],
             ],
             ['action' => 'post_media.upload.success']
         );
@@ -84,19 +85,54 @@ final class AttachmentFileService
         return $media;
     }
 
-    public function delete(AbstractFile $file): bool
+    /**
+     * Upload et remplace la miniature (thumbnail) d'un article.
+     *
+     * @throws FileUploadException
+     */
+    public function uploadPostThumbnail(UploadedFile $file, Post $post): string
+    {
+        $validator = new UploaderValidationService();
+        $validator->setAllowedMimeTypes(MimeType::IMAGE_MIMES)->setMaxSize(self::MAX_THUMBNAIL_SIZE);
+
+        $result = $validator->validate($file);
+        if ($result !== true && is_array($result)) {
+            throw new FileUploadException(implode(' ', $result));
+        }
+
+        if ($post->getThumbnail()) {
+            $this->deleteRawPath($post->getThumbnail());
+        }
+
+        $subDir = 'posts/' . (string) $post->getId() . '/thumbnail';
+        $uploadResult = $this->uploader
+            ->setUploadDirectory($subDir)
+            ->upload($file);
+
+        $uri = (string) $this->formatFileUri($uploadResult->relativePath);
+        $post->setThumbnail($uri)->setUpdatedAt($this->now());
+
+        return $uri;
+    }
+
+    public function delete(AbstractFile $file, bool $flush = true): bool
     {
         try {
             if ($file->getFilePath()) {
-                $this->uploader->delete((string) $this->extractRelativePath($file->getFilePath()));
+                $this->deleteRawPath($file->getFilePath());
             }
 
             $this->em->remove($file);
-            $this->em->flush();
+            if ($flush) {
+                $this->em->flush();
+            }
 
             $this->generateLog(
                 LoggerLevelEnum::Info,
-                ['message' => 'Fichier supprimé', 'file_id' => (string) $file->getId()],
+                [
+                    'message' => 'Fichier supprimé',
+                    'data'    => ['file_id' => (string) $file->getId()],
+                ],
                 ['action' => 'post_media.delete.success']
             );
 
@@ -104,7 +140,11 @@ final class AttachmentFileService
         } catch (Throwable $e) {
             $this->generateLog(
                 LoggerLevelEnum::Error,
-                ['message' => 'Erreur lors de la suppression du fichier', 'file_id' => (string) $file->getId(), 'error' => $e->getMessage()],
+                [
+                    'message'   => 'Erreur lors de la suppression du fichier',
+                    'data'      => ['file_id' => (string) $file->getId()],
+                    'exception' => $e->getMessage(),
+                ],
                 ['action' => 'post_media.delete.error']
             );
 
@@ -115,11 +155,22 @@ final class AttachmentFileService
     public function deleteByPost(Post $post): void
     {
         if ($post->getThumbnail()) {
-            $this->uploader->delete((string) $this->extractRelativePath($post->getThumbnail()));
+            $this->deleteRawPath($post->getThumbnail());
+            $post->setThumbnail(null);
         }
 
         foreach ($post->getMedias() as $media) {
-            $this->delete($media);
+            $this->delete($media, flush: false);
+        }
+
+        $this->em->flush();
+    }
+
+    public function deleteRawPath(?string $urlOrPath): void
+    {
+        $relativePath = $this->extractRelativePath($urlOrPath);
+        if ($relativePath) {
+            $this->uploader->delete($relativePath);
         }
     }
 

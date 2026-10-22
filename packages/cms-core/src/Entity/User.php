@@ -1,12 +1,15 @@
 <?php
 
-namespace App\Entity;
+declare(strict_types=1);
 
-use Fagathe\CmsCore\Enum\Auth\UserRole;
-use App\Repository\UserRepository;
+namespace Fagathe\CmsCore\Entity;
+
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Fagathe\CmsCore\Enum\Auth\UserRole;
+use Fagathe\CmsCore\Repository\UserRepository;
+use Fagathe\CmsCore\Trait\ConfigurableEntityTrait;
 use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
@@ -18,10 +21,19 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_USERNAME', fields: ['username'])]
+#[ORM\Index(name: 'idx_user_fulltext', columns: ['username', 'firstname', 'lastname'], flags: ['fulltext'])]
 #[UniqueEntity(fields: ['email'], message: 'Cette adresse email est déjà utilisée.')]
 #[UniqueEntity(fields: ['username'], message: 'Ce nom d\'utilisateur est déjà pris.')]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
+    use ConfigurableEntityTrait;
+
+    public const DEFAULT_SETTINGS = [
+        'bio' => null,
+        'website' => null,
+        'email_notifications' => true,
+    ];
+
     #[ORM\Id]
     #[ORM\Column(type: UuidType::NAME, unique: true)]
     #[Groups(['user.read', 'post.read', 'post.list', 'comment.read'])]
@@ -35,14 +47,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 50, enumType: UserRole::class)]
     #[Groups(['user.read'])]
-    private UserRole $role;
+    private UserRole $role = UserRole::ROLE_USER;
 
     #[ORM\Column]
     #[Assert\Regex(
-        '#^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]){8,}#',
-        'Le mot de passe doit contenir au moins une majuscule, une minuscule et un chiffre avec au moins 8 caractères !',
-        null,
-        true
+        pattern: '#^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).{8,}$#',
+        message: 'Le mot de passe doit contenir au moins une majuscule, une minuscule et un chiffre avec au moins 8 caractères !'
     )]
     #[Assert\NotBlank(message: 'Ce champ est obligatoire !')]
     private ?string $password = null;
@@ -66,9 +76,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $avatar = null;
 
     #[ORM\Column(nullable: true)]
-    private ?bool $isVerified = null;
+    #[Groups(['user.read'])]
+    private ?bool $isVerified = false;
 
     #[ORM\Column(nullable: true)]
+    #[Groups(['user.read'])]
     private ?\DateTimeImmutable $emailVerifiedAt = null;
 
     #[ORM\Column]
@@ -91,12 +103,24 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(targetEntity: Post::class, mappedBy: 'author')]
     private Collection $posts;
 
+    #[Groups(['user.read', 'post.read', 'post.list', 'comment.read'])]
+    private ?string $displayName = null;
+
     public function __construct()
     {
         $this->id = Uuid::v7();
         $this->createdAt = new \DateTimeImmutable();
+        $this->settings = static::getDefaultSettings();
         $this->tags = new ArrayCollection();
         $this->posts = new ArrayCollection();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected static function getDefaultSettings(): array
+    {
+        return self::DEFAULT_SETTINGS;
     }
 
     public function getId(): ?Uuid
@@ -129,12 +153,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setRole(UserRole $role): static
     {
         $this->role = $role;
+
         return $this;
     }
 
     public function getRoles(): array
     {
-        return array_unique([$this->role?->value ?? UserRole::ROLE_USER->value]);
+        return array_unique([$this->role->value]);
     }
 
     public function getPassword(): ?string
@@ -311,6 +336,26 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         if ($this->posts->removeElement($post) && $post->getAuthor() === $this) {
             $post->setAuthor(null);
         }
+
+        return $this;
+    }
+
+    public function getDisplayName(): ?string
+    {
+        if (!empty($this->firstname) && !empty($this->lastname)) {
+            return ucfirst($this->firstname) . ' ' . strtoupper($this->lastname);
+        }
+
+        if (!empty($this->username)) {
+            return '@' . ($this->username ?? 'utilisateur');
+        }
+
+        return null;
+    }
+
+    public function setDisplayName(): static
+    {
+        $this->displayName = $this->getDisplayName();
 
         return $this;
     }

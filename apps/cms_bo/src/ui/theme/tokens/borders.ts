@@ -20,6 +20,6 @@ export const borders: Borders = {
   focusRing: {
     width: '3px',
     offset: '2px',
-    color: 'rgba(88, 119, 76, 0.3)',
+    color: '#58774c', // Olive-600 opaque : 5,05:1 vs blanc (l'ancien rgba 0.3 = 1,49:1)
   },
 };

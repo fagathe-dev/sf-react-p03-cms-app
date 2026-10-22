@@ -1,6 +1,6 @@
 # Documentation des Composants de Navigation (`navigation_components_usage.md`)
 
-Ce document détaille l'utilisation des composants de navigation (`Navbar`, `Sidebar`, `Tabs`, `Pagination`, `Dropdown`) dans l'application React[cite: 115].
+Ce document détaille l'utilisation des composants de navigation (`Navbar`, `Sidebar`, `Tabs`, `Pagination`, `Dropdown`) dans l'application React.
 
 Tous les composants et hooks associés s'importent directement depuis l'index central :
 
@@ -51,6 +51,8 @@ import {
   DropdownMenu,
   DropdownTrigger,
   useGenericDropdown,
+  // Choix du mode d'affichage
+  ThemeModeSwitcher,
 } from '@/ui/components';
 ```
 
@@ -58,31 +60,31 @@ import {
 
 ## 1. Navbar & NavbarDropdown
 
-Barre de navigation horizontale supérieure supportant `sticky`, `breakpoint`, `isOpen` et `onToggle`[cite: 115].
-* **Sous-composants** : `Navbar`, `NavbarBrand`, `NavbarCollapse`, `NavbarNav`, `NavbarItem`, `NavbarLink`[cite: 115].
-* **Menu intégré** : `NavbarDropdown`, `NavbarDropdownToggle`, `NavbarDropdownMenu`, `NavbarDropdownItem`, `NavbarDropdownHeader`, `NavbarDropdownDivider`[cite: 115].
+Barre de navigation horizontale supérieure supportant `sticky`, `breakpoint`, `isOpen` et `onToggle`.
+* **Sous-composants** : `Navbar`, `NavbarBrand`, `NavbarCollapse`, `NavbarNav`, `NavbarItem`, `NavbarLink`.
+* **Menu intégré** : `NavbarDropdown`, `NavbarDropdownToggle`, `NavbarDropdownMenu`, `NavbarDropdownItem`, `NavbarDropdownHeader`, `NavbarDropdownDivider`.
 
 ---
 
 ## 2. Sidebar
 
-Barre de navigation latérale verticale (`sticky` sur desktop, tiroir `fixed` avec `Backdrop` sous le `breakpoint`)[cite: 115].
-* **Sous-composants** : `SidebarProvider`, `Sidebar`, `SidebarHeader`, `SidebarNav`, `SidebarSection`, `SidebarItem`, `SidebarLink` (slots `icon` et `badge`), `SidebarFooter`, `SidebarToggle`[cite: 115].
+Barre de navigation latérale verticale (`sticky` sur desktop, tiroir `fixed` avec `Backdrop` sous le `breakpoint`).
+* **Sous-composants** : `SidebarProvider`, `Sidebar`, `SidebarHeader`, `SidebarNav`, `SidebarSection`, `SidebarItem`, `SidebarLink` (slots `icon` et `badge`), `SidebarFooter`, `SidebarToggle`.
 
 ---
 
 ## 3. Tabs (Système d'Onglets)
 
-Navigation par onglets avec montage conditionnel des panneaux[cite: 115].
-* **Sous-composants** : `Tabs` (`defaultValue`, `value`, `onValueChange`), `TabList`, `TabTrigger` (`value`, `disabled`), `TabContent` (`value`)[cite: 115].
+Navigation par onglets avec montage conditionnel des panneaux.
+* **Sous-composants** : `Tabs` (`defaultValue`, `value`, `onValueChange`), `TabList`, `TabTrigger` (`value`, `disabled`), `TabContent` (`value`).
 
 ---
 
 ## 4. Pagination
 
-Navigation par pages avec calcul automatique des intervalles et ellipses[cite: 115].
-* **Props** : `currentPage`, `totalPages`, `onPageChange`, `siblingCount = 1`, `showFirstLast = true`, `disabled = false`[cite: 115].
-* **Sous-composants atomiques** : `Pagination.Container`, `Pagination.Item`, `Pagination.Button`, `Pagination.Ellipsis`[cite: 115].
+Navigation par pages avec calcul automatique des intervalles et ellipses.
+* **Props** : `currentPage`, `totalPages`, `onPageChange`, `siblingCount = 1`, `showFirstLast = true`, `disabled = false`.
+* **Sous-composants atomiques** : `Pagination.Container`, `Pagination.Item`, `Pagination.Button`, `Pagination.Ellipsis`.
 
 ---
 
@@ -153,4 +155,71 @@ export const PostRowActions = ({
     </Dropdown>
   );
 };
+```
+
+---
+
+## 6. ThemeModeSwitcher (Choix du mode d'affichage)
+
+Sélecteur de thème prêt à l'emploi, basé sur `SegmentedControl` (voir `base_components_usage.md`) et branché sur le hook `useTheme`. Il propose trois choix présentés en icônes seules, avec une infobulle :
+
+| Segment | `preference` | Icône | Description |
+| :--- | :--- | :--- | :--- |
+| Système | `'system'` | `laptop` | Suit le réglage de l'appareil / du navigateur (`prefers-color-scheme`), y compris en direct quand il change |
+| Clair | `'light'` | `white-balance-sunny` | Force le thème clair |
+| Sombre | `'dark'` | `weather-night` | Force le thème sombre |
+
+Le composant n'a pas d'état propre : il lit et écrit le choix via `useTheme()` (`preference` / `setPreference`), persisté dans le `localStorage` (clé `ds-app-theme`). Le groupe est annoncé aux lecteurs d'écran sous le nom « Mode d'affichage ».
+
+### Props (`ThemeModeSwitcherProps`)
+
+Reprises de `SegmentedControlProps` :
+
+| Prop | Type | Défaut | Description |
+| :--- | :--- | :--- | :--- |
+| `fullWidth` | `boolean` | `false` | Occupe toute la largeur du parent, segments de largeur égale |
+| `size` | `'sm' \| 'md'` | `'md'` | Taille des segments (padding, texte, icône) |
+
+### Exemples d'utilisation
+
+```tsx
+import { ThemeModeSwitcher } from '@/ui/components';
+
+{/* Seul, par exemple en haut à droite d'une page de connexion */}
+<ThemeModeSwitcher />
+
+{/* Version compacte */}
+<ThemeModeSwitcher size="sm" />
+```
+
+Dans le menu du compte de la `Navbar`, en pleine largeur, avec un conteneur qui apporte l'espacement :
+
+```tsx
+import {
+  NavbarDropdown,
+  NavbarDropdownDivider,
+  NavbarDropdownItem,
+  NavbarDropdownMenu,
+  NavbarDropdownToggle,
+  ThemeModeSwitcher,
+} from '@/ui/components';
+import styled from 'styled-components';
+
+const ThemeSetting = styled.div`
+  padding: ${({ theme }) => `${theme.spacing[2]} ${theme.spacing[3]}`};
+`;
+
+export const AccountMenu = () => (
+  <NavbarDropdown>
+    <NavbarDropdownToggle aria-label="Menu du compte">Mon compte</NavbarDropdownToggle>
+
+    <NavbarDropdownMenu align="right">
+      <NavbarDropdownItem>Mon profil</NavbarDropdownItem>
+      <NavbarDropdownDivider />
+      <ThemeSetting>
+        <ThemeModeSwitcher fullWidth />
+      </ThemeSetting>
+    </NavbarDropdownMenu>
+  </NavbarDropdown>
+);
 ```

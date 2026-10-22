@@ -33,27 +33,47 @@ export const App = ({ children }: { children: React.ReactNode }) => {
 
 ## 2. Basculer entre les thèmes (Le Hook `useTheme`)
 
-Pour interagir avec le thème (afficher le mode actuel, basculer de clair à sombre), utilisez le hook global `useTheme`.
+L'utilisateur a trois choix : **Clair**, **Sombre** ou **Auto**. En mode Auto, l'application suit le réglage de l'appareil / du navigateur (`prefers-color-scheme`), y compris en direct quand il change. Par défaut, le choix est `Auto`.
+
+Le hook `useTheme` expose :
+
+* `preference` : le choix de l'utilisateur, `'light' | 'dark' | 'system'` (persisté dans le `localStorage`, clé `ds-app-theme`).
+* `mode` : le thème réellement appliqué, `'light' | 'dark'` (jamais `'system'`).
+* `isDark` : raccourci pour `mode === 'dark'`.
+* `setPreference(preference)` : change le choix. `setMode` en est un alias conservé pour compatibilité.
+* `toggleTheme()` : bascule clair <-> sombre à partir du thème appliqué et fixe un choix explicite.
+
+Pour proposer les trois choix à l'utilisateur, utilisez le composant `ThemeModeSwitcher` (boutons segmentés, accessible au clavier) :
+
+```tsx
+import { ThemeModeSwitcher } from '@/ui/components/Navigation/ThemeModeSwitcher';
+
+// Pleine largeur (ex. menu du compte) ; `size="sm"` pour une version compacte
+<ThemeModeSwitcher fullWidth />
+```
+
+Pour lire ou piloter le thème dans un composant :
 
 ```tsx
 import { useTheme } from '@/hooks';
 
-export const ThemeToggler = () => {
-  const { mode, isDark, toggleTheme, setMode } = useTheme();
+export const ThemeInfo = () => {
+  const { mode, preference, isDark, setPreference } = useTheme();
 
   return (
     <div>
-      <p>Mode actuel : {mode}</p>
-      <button onClick={toggleTheme}>
-        Passer en mode {isDark ? 'Clair' : 'Sombre'}
-      </button>
-      
-      {/* Pour forcer un mode spécifique */}
-      <button onClick={() => setMode('light')}>Forcer Light</button>
+      <p>Choix : {preference} / Thème appliqué : {mode}</p>
+      {isDark && <p>Le mode sombre est actif.</p>}
+
+      {/* Pour forcer un choix, ou revenir au réglage système */}
+      <button onClick={() => setPreference('light')}>Forcer Light</button>
+      <button onClick={() => setPreference('system')}>Suivre le système</button>
     </div>
   );
 };
 ```
+
+`SegmentedControl` (`@/ui/components/Base/SegmentedControl`) est le composant générique sous-jacent : `options`, `value`, `onChange`, `aria-label` (obligatoire), `fullWidth`, `size` (`'sm' | 'md'`) et `showCheck`.
 
 ---
 

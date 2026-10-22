@@ -17,9 +17,12 @@ doctrine:
             CmsCore:
                 is_bundle: false
                 type: attribute
-                dir: '%kernel.project_dir%/../../packages/cms-core/src/Entity'
+                dir: "%kernel.project_dir%/../../packages/cms-core/src/Entity"
                 prefix: 'Fagathe\CmsCore\Entity'
                 alias: CmsCore
+        dql:
+            numeric_functions:
+                MATCH: DoctrineExtensions\Query\Mysql\MatchAgainst
 
 when@test:
     doctrine:

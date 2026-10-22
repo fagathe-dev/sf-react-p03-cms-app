@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Fagathe\CmsCore\Service;
 
-use App\Entity\User;
-use App\Entity\UserRequest;
-use App\Repository\UserRequestRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Fagathe\CmsCore\Entity\User;
+use Fagathe\CmsCore\Entity\UserRequest;
 use Fagathe\CmsCore\Enum\Auth\UserRequestTypeEnum;
+use Fagathe\CmsCore\Repository\UserRequestRepository;
 use Fagathe\CorePhp\Enum\LoggerLevelEnum;
 use Fagathe\CorePhp\Trait\DatetimeTrait;
 use Fagathe\CorePhp\Trait\LoggerTrait;
@@ -61,11 +61,13 @@ final class UserRequestService
             $this->generateLog(
                 LoggerLevelEnum::Info,
                 [
-                    'message'    => 'Demande utilisateur créée avec succès',
-                    'user_id'    => (string) $user->getId(),
-                    'type'       => $type->value,
-                    'is_otp'     => $isOtp,
-                    'expires_at' => $this->formatDateTime('Y-m-d H:i:s', $expiresAt),
+                    'message' => 'Demande utilisateur créée avec succès',
+                    'data'    => [
+                        'user_id'    => (string) $user->getId(),
+                        'type'       => $type->value,
+                        'is_otp'     => $isOtp,
+                        'expires_at' => $this->formatDateTime('Y-m-d H:i:s', $expiresAt),
+                    ],
                 ],
                 ['action' => 'user_request.create.success']
             );
@@ -75,9 +77,9 @@ final class UserRequestService
             $this->generateLog(
                 LoggerLevelEnum::Critical,
                 [
-                    'message' => 'Échec lors de la création de la UserRequest',
-                    'user_id' => (string) $user->getId(),
-                    'error'   => $e->getMessage(),
+                    'message'   => 'Échec lors de la création de la UserRequest',
+                    'data'      => ['user_id' => (string) $user->getId()],
+                    'exception' => $e->getMessage(),
                 ],
                 ['action' => 'user_request.create.error']
             );
@@ -105,6 +107,7 @@ final class UserRequestService
 
         if ($this->isPastDate($userRequest->getExpiresAt())) {
             $this->consume($userRequest);
+
             return null;
         }
 

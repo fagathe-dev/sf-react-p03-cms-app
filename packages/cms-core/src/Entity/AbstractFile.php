@@ -1,8 +1,11 @@
 <?php
 
-namespace App\Entity;
+declare(strict_types=1);
+
+namespace Fagathe\CmsCore\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use Fagathe\CmsCore\Trait\ConfigurableEntityTrait;
 use Fagathe\CorePhp\File\FileTypeEnum;
 use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Serializer\Attribute\Groups;
@@ -11,55 +14,58 @@ use Symfony\Component\Uid\Uuid;
 #[ORM\MappedSuperclass]
 abstract class AbstractFile
 {
+    use ConfigurableEntityTrait;
+
     #[ORM\Id]
     #[ORM\Column(type: UuidType::NAME, unique: true)]
-    #[Groups(['file.read'])]
+    #[Groups(['file.read', 'post.read'])]
     protected ?Uuid $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['file.read'])]
+    #[Groups(['file.read', 'post.read'])]
     protected ?string $originalName = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['file.read'])]
+    #[Groups(['file.read', 'post.read'])]
     protected ?string $niceName = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['file.read'])]
+    #[Groups(['file.read', 'post.read'])]
     protected ?string $filePath = null;
 
     #[ORM\Column(length: 100)]
-    #[Groups(['file.read'])]
+    #[Groups(['file.read', 'post.read'])]
     protected ?string $mimeType = null;
 
     #[ORM\Column(length: 30, nullable: true, enumType: FileTypeEnum::class)]
-    #[Groups(['file.read'])]
-    protected FileTypeEnum|string|null $type = null;
+    #[Groups(['file.read', 'post.read'])]
+    protected ?FileTypeEnum $type = null;
 
     #[ORM\Column(length: 10)]
-    #[Groups(['file.read'])]
+    #[Groups(['file.read', 'post.read'])]
     protected ?string $extension = null;
 
     #[ORM\Column]
-    #[Groups(['file.read'])]
+    #[Groups(['file.read', 'post.read'])]
     protected ?int $size = null;
 
     #[ORM\Column]
-    #[Groups(['file.read'])]
+    #[Groups(['file.read', 'post.read'])]
     protected ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(['file.read'])]
+    #[Groups(['file.read', 'post.read'])]
     protected ?\DateTimeImmutable $updatedAt = null;
 
     #[ORM\Column(options: ['default' => false])]
-    #[Groups(['file.read'])]
+    #[Groups(['file.read', 'post.read'])]
     protected bool $isPinned = false;
 
     public function __construct()
     {
         $this->id = Uuid::v7();
         $this->createdAt = new \DateTimeImmutable();
+        $this->settings = static::getDefaultSettings();
     }
 
     public function getId(): ?Uuid
@@ -75,6 +81,7 @@ abstract class AbstractFile
     public function setOriginalName(string $originalName): static
     {
         $this->originalName = $originalName;
+
         return $this;
     }
 
@@ -86,6 +93,7 @@ abstract class AbstractFile
     public function setNiceName(?string $niceName): static
     {
         $this->niceName = $niceName;
+
         return $this;
     }
 
@@ -97,6 +105,7 @@ abstract class AbstractFile
     public function setFilePath(string $filePath): static
     {
         $this->filePath = $filePath;
+
         return $this;
     }
 
@@ -108,6 +117,7 @@ abstract class AbstractFile
     public function setMimeType(string $mimeType): static
     {
         $this->mimeType = $mimeType;
+
         return $this;
     }
 
@@ -119,6 +129,7 @@ abstract class AbstractFile
     public function setExtension(string $extension): static
     {
         $this->extension = $extension;
+
         return $this;
     }
 
@@ -130,6 +141,7 @@ abstract class AbstractFile
     public function setSize(int $size): static
     {
         $this->size = $size;
+
         return $this;
     }
 
@@ -141,6 +153,7 @@ abstract class AbstractFile
     public function setCreatedAt(\DateTimeImmutable $createdAt): static
     {
         $this->createdAt = $createdAt;
+
         return $this;
     }
 
@@ -152,6 +165,7 @@ abstract class AbstractFile
     public function setUpdatedAt(?\DateTimeImmutable $updatedAt): static
     {
         $this->updatedAt = $updatedAt;
+
         return $this;
     }
 
@@ -163,6 +177,7 @@ abstract class AbstractFile
     public function setIsPinned(bool $isPinned): static
     {
         $this->isPinned = $isPinned;
+
         return $this;
     }
 
@@ -177,6 +192,7 @@ abstract class AbstractFile
             $type = FileTypeEnum::tryFrom($type);
         }
         $this->type = $type;
+
         return $this;
     }
 }

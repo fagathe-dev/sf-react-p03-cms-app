@@ -7,7 +7,7 @@ const HeaderBox = styled.header`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: ${({ theme }) => `${theme.spacing[3.5]}${theme.spacing[4]}`};
+  padding: ${({ theme }) => `${theme.spacing[3.5]} ${theme.spacing[4]}`};
   border-bottom: 1px solid ${({ theme }) => theme.colors.border.default};
 `;
 
@@ -42,7 +42,7 @@ export const DrawerFooter = styled.footer<BaseComponentProps>`
   align-items: center;
   justify-content: flex-end;
   gap: ${({ theme }) => theme.spacing[2.5]};
-  padding: ${({ theme }) => `${theme.spacing[3]}${theme.spacing[4]}`};
+  padding: ${({ theme }) => `${theme.spacing[3]} ${theme.spacing[4]}`};
   border-top: 1px solid ${({ theme }) => theme.colors.border.default};
   background-color: ${({ theme }) => theme.colors.background.surfaceHover};
 `;

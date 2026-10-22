@@ -2,11 +2,11 @@
 
 namespace App\DataFixtures;
 
-use App\Entity\Entry;
-use App\Entity\Note;
-use App\Entity\Tag;
-use App\Entity\Todo;
-use App\Entity\User;
+use Fagathe\CmsCore\Entity\Entry;
+use Fagathe\CmsCore\Entity\Note;
+use Fagathe\CmsCore\Entity\Tag;
+use Fagathe\CmsCore\Entity\Todo;
+use Fagathe\CmsCore\Entity\User;
 use Fagathe\CmsCore\Enum\Auth\UserRole;
 use Fagathe\CmsCore\Enum\ColorEnum;
 use Fagathe\CmsCore\Enum\MoodEnum;

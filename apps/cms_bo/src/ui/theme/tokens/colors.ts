@@ -1,4 +1,3 @@
-// Palettes brutes Tailwind CSS extraites de _variables.scss
 export const palettes = {
   olive: {
     50: '#f7f9f6',
@@ -147,12 +146,17 @@ export const getColors = (mode: 'light' | 'dark') => {
     background: {
       body: isDark ? palettes.slate[950] : palettes.neutral[50],
       surface: isDark ? palettes.slate[900] : staticColors.white,
-      surfaceHover: isDark ? palettes.slate[800] : palettes.slate[50],
+      // Sombre : #283548 (entre slate 800 et 700) = survol visible (1,44:1 vs surface)
+      // tout en gardant le texte muted à 4,84:1 (>= 4,5:1)
+      surfaceHover: isDark ? '#283548' : palettes.slate[50],
       surfaceActive: isDark ? palettes.slate[700] : palettes.slate[100],
     },
     border: {
-      default: isDark ? palettes.slate[800] : palettes.slate[200],
-      hover: isDark ? palettes.slate[700] : palettes.slate[300],
+      // Séparation des composants (cartes, séparateurs) : sombre 1,72:1 vs surface
+      default: isDark ? palettes.slate[700] : palettes.slate[200],
+      hover: isDark ? palettes.slate[600] : palettes.slate[300],
+      // Contour des éléments interactifs (champs, boutons outline) : >= 3:1 (WCAG 1.4.11)
+      strong: palettes.slate[500],
     },
   };
 };

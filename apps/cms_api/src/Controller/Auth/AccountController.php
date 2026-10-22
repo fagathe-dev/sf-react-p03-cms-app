@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller\Auth;
 
 use Fagathe\CmsCore\Service\AccountService;
@@ -13,12 +15,15 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('IS_AUTHENTICATED_FULLY')]
 final class AccountController extends AbstractController
 {
-    public function __construct(private readonly AccountService $service) {}
+    public function __construct(
+        private readonly AccountService $service,
+    ) {}
 
     #[Route('/profile', name: 'profile', methods: ['GET'])]
     public function profile(): JsonResponse
     {
         $res = $this->service->getProfile();
+
         return $this->json($res->data, $res->status, $res->headers, $res->context);
     }
 
@@ -26,6 +31,7 @@ final class AccountController extends AbstractController
     public function updateProfile(Request $request): JsonResponse
     {
         $res = $this->service->updateProfile($request);
+
         return $this->json($res->data, $res->status, $res->headers, $res->context);
     }
 
@@ -33,6 +39,7 @@ final class AccountController extends AbstractController
     public function changeEmail(Request $request): JsonResponse
     {
         $res = $this->service->changeEmail($request);
+
         return $this->json($res->data, $res->status, $res->headers, $res->context);
     }
 
@@ -40,6 +47,7 @@ final class AccountController extends AbstractController
     public function changePassword(Request $request): JsonResponse
     {
         $res = $this->service->changePassword($request);
+
         return $this->json($res->data, $res->status, $res->headers, $res->context);
     }
 
@@ -47,6 +55,7 @@ final class AccountController extends AbstractController
     public function updateAvatar(Request $request): JsonResponse
     {
         $res = $this->service->updateAvatar($request);
+
         return $this->json($res->data, $res->status, $res->headers, $res->context);
     }
 
@@ -54,6 +63,7 @@ final class AccountController extends AbstractController
     public function deleteAccount(): JsonResponse
     {
         $res = $this->service->deleteAccount();
+
         return $this->json($res->data, $res->status, $res->headers, $res->context);
     }
 }

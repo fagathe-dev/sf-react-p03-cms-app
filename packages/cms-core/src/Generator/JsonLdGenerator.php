@@ -34,6 +34,8 @@ class JsonLdGenerator
         ?SeoMetadataInterface $seo = null,
         SchemaType $type = SchemaType::TECH_ARTICLE
     ): array {
+        $imagePath = $seo?->getOgImage() ?? $article->getThumbnail();
+
         $schema = [
             '@context' => 'https://schema.org',
             '@type' => $type->value,
@@ -43,7 +45,7 @@ class JsonLdGenerator
             ],
             'headline' => $seo?->getMetaTitle() ?? $article->getTitle(),
             'description' => $seo?->getMetaDescription() ?? $article->getExcerpt(),
-            'image' => $article->getThumbnail() ? $this->normalizeUrl($article->getThumbnail()) : null,
+            'image' => $imagePath ? $this->normalizeUrl($imagePath) : null,
             'datePublished' => $article->getPublishedAt()?->format(\DateTimeInterface::ATOM),
             'dateModified' => ($article->getUpdatedAt() ?? $article->getPublishedAt())?->format(\DateTimeInterface::ATOM),
             'author' => [

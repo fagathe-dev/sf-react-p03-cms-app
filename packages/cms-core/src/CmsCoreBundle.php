@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Fagathe\CmsCore;
 
+use DoctrineExtensions\Query\Mysql\MatchAgainst;
 use Fagathe\CorePhp\Generator\TokenGenerator;
 use Fagathe\CorePhp\Uploader\UploaderService;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -12,6 +13,23 @@ use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
 
 class CmsCoreBundle extends AbstractBundle
 {
+
+    public function prependExtension(
+        ContainerConfigurator $container,
+        ContainerBuilder $builder
+    ): void {
+        // Enregistre automatiquement la fonction DQL MATCH() dans Doctrine
+        $builder->prependExtensionConfig('doctrine', [
+            'orm' => [
+                'dql' => [
+                    'numeric_functions' => [
+                        'MATCH' => MatchAgainst::class,
+                    ],
+                ],
+            ],
+        ]);
+    }
+
     public function loadExtension(
         array $config,
         ContainerConfigurator $container,

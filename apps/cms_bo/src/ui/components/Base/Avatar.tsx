@@ -38,11 +38,11 @@ const AvatarContainer = styled.div<{ size: AvatarSize }>`
   align-items: center;
   justify-content: center;
   font-weight: ${({ theme }) => theme.typography.weights.semibold};
-  font-size: ${({ size }) =>
-    size === 'sm' ? '0.75rem' : size === 'lg' ? '1.125rem' : '0.875rem'};
+  font-size: ${({ size }) => (size === 'sm' ? '0.75rem' : size === 'lg' ? '1.125rem' : '0.875rem')};
   overflow: hidden;
   user-select: none;
   flex-shrink: 0;
+  box-shadow: ${({ theme }) => theme.shadows['md']};
 `;
 
 const AvatarImage = styled.img`
@@ -51,23 +51,13 @@ const AvatarImage = styled.img`
   object-fit: cover;
 `;
 
-export const Avatar = ({
-  src,
-  alt = '',
-  name,
-  size = 'base',
-  ...rest
-}: AvatarProps) => {
+export const Avatar = ({ src, alt = '', name, size = 'base', ...rest }: AvatarProps) => {
   const [hasError, setHasError] = useState(false);
 
   return (
     <AvatarContainer size={size} {...rest}>
       {src && !hasError ? (
-        <AvatarImage
-          src={src}
-          alt={alt || name || 'Avatar'}
-          onError={() => setHasError(true)}
-        />
+        <AvatarImage src={src} alt={alt || name || 'Avatar'} onError={() => setHasError(true)} />
       ) : (
         <span>{getInitials(name)}</span>
       )}

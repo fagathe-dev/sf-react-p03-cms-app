@@ -1,14 +1,5 @@
 import { AppTheme } from '@/ui/types';
-import {
-  borders,
-  breakpoints,
-  getColors,
-  getShadows,
-  media,
-  radii,
-  spacing,
-  typography,
-} from './tokens';
+import { borders, breakpoints, getColors, getShadows, media, radii, spacing, typography } from './tokens';
 
 export const lightTheme: AppTheme = {
   name: 'light',
@@ -33,7 +24,7 @@ export const darkTheme: AppTheme = {
     ...borders,
     focusRing: {
       ...borders.focusRing,
-      color: 'rgba(115, 149, 102, 0.4)', // Olive-500 en dark
+      color: '#93b387', // Olive-400 opaque en dark : 7,7:1 vs surface (WCAG >= 3:1)
     },
   },
   breakpoints,

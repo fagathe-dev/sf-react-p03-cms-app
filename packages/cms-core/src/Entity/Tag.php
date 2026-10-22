@@ -1,13 +1,17 @@
 <?php
 
-namespace App\Entity;
+declare(strict_types=1);
 
-use Fagathe\CmsCore\Enum\ColorEnum;
-use App\Repository\TagRepository;
+namespace Fagathe\CmsCore\Entity;
+
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Fagathe\CmsCore\Contract\TaxonomySeoInterface;
+use Fagathe\CmsCore\Enum\ColorEnum;
+use Fagathe\CmsCore\Repository\TagRepository;
+use Fagathe\CmsCore\Trait\ConfigurableEntityTrait;
 use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Attribute\Groups;
@@ -16,9 +20,13 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: TagRepository::class)]
 #[ORM\UniqueConstraint(name: 'uniq_user_tag_color', fields: ['owner', 'color'])]
+#[ORM\Index(name: 'idx_tag_fulltext', columns: ['name', 'description'], flags: ['fulltext'])]
+#[UniqueEntity(fields: ['slug'], message: 'Ce slug de tag est déjà utilisé.')]
 #[UniqueEntity(fields: ['color', 'owner'], message: 'Vous avez déjà un tag avec cette couleur: {{ value }}.')]
-class Tag
+class Tag implements TaxonomySeoInterface
 {
+    use ConfigurableEntityTrait;
+
     #[ORM\Id]
     #[ORM\Column(type: UuidType::NAME, unique: true)]
     #[Groups(['tag.list', 'tag.read', 'post.read', 'post.list'])]
@@ -35,10 +43,10 @@ class Tag
 
     #[ORM\Column(length: 20, nullable: true, enumType: ColorEnum::class)]
     #[Groups(['tag.list', 'tag.read', 'post.read', 'post.list'])]
-    private ColorEnum|string|null $color = null;
+    private ?ColorEnum $color = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
-    #[Groups(['tag.read'])]
+    #[Groups(['tag.list', 'tag.read'])]
     private ?string $description = null;
 
     #[ORM\Column]
@@ -63,6 +71,7 @@ class Tag
     {
         $this->id = Uuid::v7();
         $this->createdAt = new \DateTimeImmutable();
+        $this->settings = static::getDefaultSettings();
         $this->posts = new ArrayCollection();
     }
 

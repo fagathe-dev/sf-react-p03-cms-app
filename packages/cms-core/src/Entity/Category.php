@@ -1,12 +1,16 @@
 <?php
 
-namespace App\Entity;
+declare(strict_types=1);
 
-use App\Repository\CategoryRepository;
+namespace Fagathe\CmsCore\Entity;
+
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Fagathe\CmsCore\Contract\TaxonomySeoInterface;
+use Fagathe\CmsCore\Repository\CategoryRepository;
+use Fagathe\CmsCore\Trait\ConfigurableEntityTrait;
 use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Attribute\Groups;
@@ -14,9 +18,18 @@ use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: CategoryRepository::class)]
+#[ORM\Index(name: 'idx_category_fulltext', columns: ['name', 'description'], flags: ['fulltext'])]
 #[UniqueEntity(fields: ['slug'], message: 'Ce slug de catégorie existe déjà.')]
-class Category
+class Category implements TaxonomySeoInterface
 {
+    use ConfigurableEntityTrait;
+
+    public const DEFAULT_SETTINGS = [
+        'icon' => null,
+        'color' => null,
+        'is_featured' => false,
+    ];
+
     #[ORM\Id]
     #[ORM\Column(type: UuidType::NAME, unique: true)]
     #[Groups(['category.list', 'category.read', 'post.read', 'post.list'])]
@@ -32,7 +45,7 @@ class Category
     private ?string $slug = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
-    #[Groups(['category.read'])]
+    #[Groups(['category.list', 'category.read'])]
     private ?string $description = null;
 
     #[ORM\Column]
@@ -53,7 +66,16 @@ class Category
     {
         $this->id = Uuid::v7();
         $this->createdAt = new \DateTimeImmutable();
+        $this->settings = static::getDefaultSettings();
         $this->posts = new ArrayCollection();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected static function getDefaultSettings(): array
+    {
+        return self::DEFAULT_SETTINGS;
     }
 
     public function getId(): ?Uuid

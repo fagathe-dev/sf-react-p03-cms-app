@@ -1,13 +1,19 @@
 <?php
 
-namespace App\Entity;
+declare(strict_types=1);
 
-use Fagathe\CmsCore\Enum\PostStatus;
-use App\Repository\PostRepository;
+namespace Fagathe\CmsCore\Entity;
+
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Fagathe\CmsCore\Contract\ArticleSeoInterface;
+use Fagathe\CmsCore\Enum\Post\PostStatus;
+use Fagathe\CmsCore\Repository\PostRepository;
+use Fagathe\CmsCore\Trait\ConfigurableEntityTrait;
+use Fagathe\CmsCore\Trait\FlaggableTrait;
+use Fagathe\CmsCore\Trait\LikableTrait;
 use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Attribute\Groups;
@@ -17,17 +23,27 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: PostRepository::class)]
 #[ORM\Index(name: 'idx_post_status', columns: ['status'])]
 #[ORM\Index(name: 'idx_post_trashed_at', columns: ['trashed_at'])]
+#[ORM\Index(name: 'idx_post_flags', columns: ['flags'])]
+#[ORM\Index(name: 'idx_post_likes', columns: ['likes_count'])]
+#[ORM\Index(name: 'idx_post_fulltext', columns: ['title', 'excerpt'], flags: ['fulltext'])]
 #[UniqueEntity(fields: ['slug'], message: 'Ce slug est déjà utilisé par un autre article.')]
-class Post
+class Post implements ArticleSeoInterface
 {
+    use ConfigurableEntityTrait, LikableTrait, FlaggableTrait;
+
     public const TRASH_RETENTION_DAYS = 30;
+    public const AUTO_MODERATION_FLAG_THRESHOLD = 10;
 
     public const DEFAULT_SETTINGS = [
-        'allow_comments' => true,
-        'show_toc' => true,
-        'is_featured' => false,
-        'seo_title' => null,
+        'allow_comments'  => true,
+        'allow_likes'     => true,
+        'show_toc'        => true,
+        'is_featured'     => false,
+        'reading_time'    => null,
+        'seo_title'       => null,
         'seo_description' => null,
+        'liked_by'        => [], // map: [user_uuid => ISO_8601_date]
+        'flagged_by'      => [], // map: [user_uuid => ['reason' => string, 'comment' => ?string, 'flagged_at' => string]]
     ];
 
     #[ORM\Id]
@@ -56,13 +72,6 @@ class Post
     #[ORM\Column(length: 20, enumType: PostStatus::class, options: ['default' => PostStatus::DRAFT->value])]
     #[Groups(['post.list', 'post.read'])]
     private PostStatus $status = PostStatus::DRAFT;
-
-    /**
-     * @var array<string, mixed>|null
-     */
-    #[ORM\Column(type: Types::JSON, nullable: true)]
-    #[Groups(['post.read'])]
-    private ?array $settings = self::DEFAULT_SETTINGS;
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'posts')]
     #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
@@ -123,9 +132,6 @@ class Post
     #[Groups(['post.list', 'post.read'])]
     private ?\DateTimeImmutable $publishedAt = null;
 
-    /**
-     * Date de mise à la corbeille (pour suppression définitive au bout de 30 jours).
-     */
     #[ORM\Column(nullable: true)]
     #[Groups(['post.list', 'post.read'])]
     private ?\DateTimeImmutable $trashedAt = null;
@@ -146,10 +152,19 @@ class Post
     {
         $this->id = Uuid::v7();
         $this->createdAt = new \DateTimeImmutable();
+        $this->settings = static::getDefaultSettings();
         $this->tags = new ArrayCollection();
         $this->blocks = new ArrayCollection();
         $this->medias = new ArrayCollection();
         $this->comments = new ArrayCollection();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected static function getDefaultSettings(): array
+    {
+        return self::DEFAULT_SETTINGS;
     }
 
     public function getId(): ?Uuid
@@ -246,9 +261,6 @@ class Post
         return $this->status === PostStatus::TRASH;
     }
 
-    /**
-     * Vérifie si l'article est dans la corbeille depuis plus de 30 jours.
-     */
     public function isPurgeable(): bool
     {
         if ($this->status !== PostStatus::TRASH || $this->trashedAt === null) {
@@ -260,52 +272,10 @@ class Post
         return new \DateTimeImmutable() >= $expirationDate;
     }
 
-    // -------------------------------------------------------------------------
-    // Settings / Options (JSON)
-    // -------------------------------------------------------------------------
-
-    /**
-     * @return array<string, mixed>
-     */
-    public function getSettings(): array
+    public function areCommentsAllowed(): bool
     {
-        return array_replace(self::DEFAULT_SETTINGS, $this->settings ?? []);
+        return (bool) $this->getSetting('allow_comments', true);
     }
-
-    /**
-     * @param array<string, mixed>|null $settings
-     */
-    public function setSettings(?array $settings): static
-    {
-        $this->settings = array_replace(self::DEFAULT_SETTINGS, $settings ?? []);
-
-        return $this;
-    }
-
-    public function getSetting(string $key, mixed $default = null): mixed
-    {
-        $merged = $this->getSettings();
-
-        return $merged[$key] ?? $default;
-    }
-
-    public function getOption(string $key, mixed $default = null): mixed
-    {
-        return $this->getSetting($key, $default);
-    }
-
-    public function setSetting(string $key, mixed $value): static
-    {
-        $current = $this->getSettings();
-        $current[$key] = $value;
-        $this->settings = $current;
-
-        return $this;
-    }
-
-    // -------------------------------------------------------------------------
-    // Blocs de contenu (Position à 1 par défaut si premier bloc)
-    // -------------------------------------------------------------------------
 
     /**
      * @return Collection<int, BlocContent>
@@ -343,6 +313,16 @@ class Post
         return $this;
     }
 
+    public function clearBlocks(): static
+    {
+        foreach ($this->blocks as $block) {
+            $block->setPost(null);
+        }
+        $this->blocks->clear();
+
+        return $this;
+    }
+
     public function reorderBlocks(): void
     {
         $pos = 1;
@@ -350,10 +330,6 @@ class Post
             $block->setPosition($pos++);
         }
     }
-
-    // -------------------------------------------------------------------------
-    // Relations & Dates
-    // -------------------------------------------------------------------------
 
     public function getAuthor(): ?User
     {
@@ -365,6 +341,22 @@ class Post
         $this->author = $author;
 
         return $this;
+    }
+
+    /**
+     * Requis par ArticleSeoInterface pour les schémas JSON-LD.
+     */
+    public function getAuthorName(): string
+    {
+        if ($this->author === null) {
+            return 'Rédaction';
+        }
+
+        if (method_exists($this->author, 'getDisplayName') && !empty($this->author->getDisplayName())) {
+            return (string) $this->author->getDisplayName();
+        }
+
+        return (string) ($this->author->getUsername() ?? 'Rédaction');
     }
 
     public function getCategory(): ?Category
@@ -399,6 +391,13 @@ class Post
     public function removeTag(Tag $tag): static
     {
         $this->tags->removeElement($tag);
+
+        return $this;
+    }
+
+    public function clearTags(): static
+    {
+        $this->tags->clear();
 
         return $this;
     }
@@ -494,6 +493,33 @@ class Post
     public function setViewsCount(int $viewsCount): static
     {
         $this->viewsCount = max(0, $viewsCount);
+
+        return $this;
+    }
+
+    public function areLikesAllowed(): bool
+    {
+        return (bool) $this->getSetting('allow_likes', true);
+    }
+
+    /**
+     * Ajoute un commentaire à l'article.
+     */
+    public function addComment(Comment $comment): static
+    {
+        if (!$this->comments->contains($comment)) {
+            $this->comments->add($comment);
+            $comment->setPost($this);
+        }
+
+        return $this;
+    }
+
+    public function removeComment(Comment $comment): static
+    {
+        if ($this->comments->removeElement($comment) && $comment->getPost() === $this) {
+            $comment->setPost(null);
+        }
 
         return $this;
     }

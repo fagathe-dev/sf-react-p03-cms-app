@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Entity;
+namespace Fagathe\CmsCore\Entity;
 
-use App\Repository\PostMediaRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Fagathe\CmsCore\Repository\PostMediaRepository;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: PostMediaRepository::class)]
