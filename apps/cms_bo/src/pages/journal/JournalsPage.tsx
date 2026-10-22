@@ -55,16 +55,21 @@ export const JournalsPage: React.FC = () => {
 
   const { pinned, others } = useMemo(
     () => ({
-      pinned: entries.filter((e) => e.isPinned),
-      others: entries.filter((e) => !e.isPinned),
+      pinned: entries.filter((e) => e.is_pinned),
+      others: entries.filter((e) => !e.is_pinned),
     }),
     [entries]
   );
 
   const handleTogglePin = async (entry: Entry) => {
-    const next = !entry.isPinned;
-    setEntries((prev) => prev.map((e) => (e.id === entry.id ? { ...e, isPinned: next } : e)));
-    await updateEntry(entry.id, { isPinned: next });
+    const next = !entry.is_pinned;
+    setEntries((prev) => prev.map((e) => (e.id === entry.id ? { ...e, is_pinned: next } : e)));
+    try {
+      await updateEntry(entry.id, { isPinned: next });
+    } catch {
+      // Rollback : l'API a refusé la modification
+      setEntries((prev) => prev.map((e) => (e.id === entry.id ? { ...e, is_pinned: !next } : e)));
+    }
   };
 
   if (!isUnlocked) {

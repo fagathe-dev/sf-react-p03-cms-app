@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Fagathe\CmsCore\Service;
 
-use Doctrine\ORM\EntityManagerInterface;
 use Fagathe\CmsCore\Dto\Comment\CreateCommentDto;
 use Fagathe\CmsCore\Dto\Comment\ModerateCommentDto;
 use Fagathe\CmsCore\Dto\Comment\UpdateCommentDto;
@@ -36,15 +35,11 @@ final class CommentService
     public function __construct(
         private readonly CommentRepository $commentRepository,
         private readonly PostRepository $postRepository,
-        private readonly EntityManagerInterface $em,
         private readonly SerializerInterface $serializer,
         private readonly ValidatorInterface $validator,
         private readonly Security $security,
     ) {}
 
-    /**
-     * Liste les commentaires d'un article (front ou back-office).
-     */
     public function listByPost(string $postId, bool $onlyApproved = true): object
     {
         if (!Uuid::isValid($postId)) {
@@ -56,7 +51,6 @@ final class CommentService
             return $this->notFoundResponse('Article introuvable.');
         }
 
-        // Si un utilisateur demande les commentaires non approuvés, il doit être au moins modérateur
         if (!$onlyApproved && !$this->security->isGranted('ROLE_MODERATOR')) {
             $onlyApproved = true;
         }
@@ -66,9 +60,6 @@ final class CommentService
         return $this->sendJson($comments, Response::HTTP_OK, context: ['groups' => ['comment.read']]);
     }
 
-    /**
-     * Liste globale pour la modération (filtrable par statut ou par signalements).
-     */
     public function listForModeration(Request $request): object
     {
         if (!$this->security->isGranted('ROLE_MODERATOR')) {
@@ -95,9 +86,6 @@ final class CommentService
         return $this->sendJson($comments, Response::HTTP_OK, context: ['groups' => ['comment.list', 'comment.read']]);
     }
 
-    /**
-     * Création d'un commentaire (strictement réservée aux utilisateurs connectés).
-     */
     public function create(Request $request): object
     {
         $user = $this->getAuthenticatedUser();
@@ -149,45 +137,29 @@ final class CommentService
             return $this->sendViolations($entityViolations);
         }
 
-        try {
-            $this->em->persist($comment);
-            $this->em->flush();
-
-            $this->generateLog(
-                LoggerLevelEnum::Info,
-                [
-                    'message' => 'Nouveau commentaire créé',
-                    'data'    => [
-                        'comment_id' => (string) $comment->getId(),
-                        'post_id'    => (string) $post->getId(),
-                        'user_id'    => (string) $user->getId(),
-                    ],
-                ],
-                ['action' => 'comment.create.success', 'uid' => (string) $user->getId()]
-            );
-
-            return $this->sendJson($comment, Response::HTTP_CREATED, context: ['groups' => ['comment.read']]);
-        } catch (Throwable $e) {
-            $this->generateLog(
-                LoggerLevelEnum::Error,
-                [
-                    'message'   => 'Erreur lors de la création du commentaire',
-                    'data'      => ['post_id' => $dto->postId],
-                    'exception' => $e->getMessage(),
-                ],
-                ['action' => 'comment.create.error']
-            );
-
+        if (!$this->commentRepository->save($comment, flush: true, isCreation: true)) {
             return $this->sendJson(
                 ['message' => 'Erreur interne lors de l\'enregistrement du commentaire.'],
                 Response::HTTP_INTERNAL_SERVER_ERROR
             );
         }
+
+        $this->generateLog(
+            LoggerLevelEnum::Info,
+            [
+                'message' => 'Nouveau commentaire créé',
+                'data'    => [
+                    'comment_id' => (string) $comment->getId(),
+                    'post_id'    => (string) $post->getId(),
+                    'user_id'    => (string) $user->getId(),
+                ],
+            ],
+            ['action' => 'comment.create.success', 'uid' => (string) $user->getId()]
+        );
+
+        return $this->sendJson($comment, Response::HTTP_CREATED, context: ['groups' => ['comment.read']]);
     }
 
-    /**
-     * Modification d'un commentaire par son auteur (ou un admin).
-     */
     public function update(string $id, Request $request): object
     {
         $user = $this->getAuthenticatedUser();
@@ -218,17 +190,13 @@ final class CommentService
 
         $comment
             ->setContent(trim($dto->content))
-            ->setSetting('is_edited', true)
-            ->setUpdatedAt($this->now());
+            ->setSetting('is_edited', true);
 
-        $this->em->flush();
+        $this->commentRepository->save($comment, flush: true, isCreation: false);
 
         return $this->sendJson($comment, Response::HTTP_OK, context: ['groups' => ['comment.read']]);
     }
 
-    /**
-     * Signalement d'un commentaire par un utilisateur connecté (avec motif FlagReason + commentaire libre).
-     */
     public function flag(string $id, Request $request): object
     {
         $user = $this->getAuthenticatedUser();
@@ -271,8 +239,7 @@ final class CommentService
             );
         }
 
-        $comment->setUpdatedAt($this->now());
-        $this->em->flush();
+        $this->commentRepository->save($comment, flush: true, isCreation: false);
 
         $this->generateLog(
             LoggerLevelEnum::Notice,
@@ -297,9 +264,6 @@ final class CommentService
         );
     }
 
-    /**
-     * Modération d'un commentaire (ROLE_MODERATOR+).
-     */
     public function moderate(string $id, Request $request): object
     {
         $moderator = $this->getAuthenticatedUser();
@@ -331,8 +295,7 @@ final class CommentService
         $comment
             ->setStatus($dto->status)
             ->setSetting('moderated_by', (string) $moderator->getId())
-            ->setSetting('moderated_at', $this->now()->format(\DateTimeInterface::ATOM))
-            ->setUpdatedAt($this->now());
+            ->setSetting('moderated_at', $this->now()->format(\DateTimeInterface::ATOM));
 
         if ($dto->moderationNote !== null) {
             $comment->setSetting('moderation_note', trim($dto->moderationNote));
@@ -342,7 +305,7 @@ final class CommentService
             $comment->clearFlags();
         }
 
-        $this->em->flush();
+        $this->commentRepository->save($comment, flush: true, isCreation: false);
 
         $this->generateLog(
             LoggerLevelEnum::Info,
@@ -375,8 +338,7 @@ final class CommentService
             return $this->sendForbidden('Vous n\'avez pas les droits pour supprimer ce commentaire.');
         }
 
-        $this->em->remove($comment);
-        $this->em->flush();
+        $this->commentRepository->remove($comment, flush: true);
 
         $this->generateLog(
             LoggerLevelEnum::Info,

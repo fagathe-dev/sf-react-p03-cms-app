@@ -1,20 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Fagathe\CmsCore\Repository;
 
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\Exception\ORMException;
 use Doctrine\Persistence\ManagerRegistry;
 use Fagathe\CmsCore\Entity\Post;
 use Fagathe\CmsCore\Enum\Post\BlockType;
 use Fagathe\CmsCore\Enum\Post\PostStatus;
 use Fagathe\CmsCore\Trait\FullTextSearchTrait;
+use Fagathe\CorePhp\Trait\DatetimeTrait;
 
 /**
  * @extends ServiceEntityRepository<Post>
  */
 class PostRepository extends ServiceEntityRepository
 {
-    use FullTextSearchTrait;
+    use DatetimeTrait, FullTextSearchTrait;
 
     public function __construct(ManagerRegistry $registry)
     {
@@ -44,7 +48,6 @@ class PostRepository extends ServiceEntityRepository
                     + COALESCE(MAX(MATCH(b.searchText) AGAINST (:searchQuery BOOLEAN)), 0)
                 ) AS HIDDEN score'
             )
-            // Jointure filtrée exclusivement sur les blocs de type TEXT
             ->leftJoin('p.blocks', 'b', 'WITH', 'b.type = :textBlockType')
             ->leftJoin('p.category', 'c')->addSelect('c')
             ->leftJoin('p.author', 'a')->addSelect('a')
@@ -71,5 +74,45 @@ class PostRepository extends ServiceEntityRepository
         }
 
         return $qb->getQuery()->getResult();
+    }
+
+    public function remove(Post $post, bool $flush = true): bool
+    {
+        try {
+            $this->getEntityManager()->remove($post);
+
+            if ($flush) {
+                $this->getEntityManager()->flush();
+            }
+
+            return true;
+        } catch (ORMException) {
+            return false;
+        }
+    }
+
+    public function save(Post $post, bool $flush = true, bool $isCreation = false): bool
+    {
+        $now = $this->now();
+
+        if ($isCreation && $post->getCreatedAt() === null) {
+            $post->setCreatedAt($now);
+        }
+
+        if (!$isCreation) {
+            $post->setUpdatedAt($now);
+        }
+
+        try {
+            $this->getEntityManager()->persist($post);
+
+            if ($flush) {
+                $this->getEntityManager()->flush();
+            }
+
+            return true;
+        } catch (ORMException) {
+            return false;
+        }
     }
 }

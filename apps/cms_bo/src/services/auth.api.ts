@@ -10,6 +10,7 @@ import {
   UpdateProfilePayload,
   User,
 } from '@/types/auth.types';
+import { encodeSecret } from '@/utils';
 import { fetchAPI } from './fetchAPI';
 
 const AUTH_BASE_URL = '/auth';
@@ -35,7 +36,7 @@ const extractErrorMessage = (data: unknown, fallback: string): string => {
 export const fetchRegister = async (payload: RegisterPayload): Promise<RegisterResponse> => {
   const res = await fetchAPI<RegisterResponse>(`${AUTH_BASE_URL}/register`, {
     method: 'POST',
-    body: payload,
+    body: { ...payload, password: encodeSecret(payload.password) },
   });
 
   if (!res.ok) {
@@ -48,7 +49,7 @@ export const fetchRegister = async (payload: RegisterPayload): Promise<RegisterR
 export const fetchLogin = async (credentials: LoginPayload): Promise<AuthResponse> => {
   const res = await fetchAPI<AuthResponse>(`${AUTH_BASE_URL}/login`, {
     method: 'POST',
-    body: credentials,
+    body: { ...credentials, password: encodeSecret(credentials.password) },
   });
 
   if (!res.ok) {
@@ -119,7 +120,10 @@ export const updateEmail = async (payload: ChangeEmailPayload): Promise<User> =>
 export const updatePassword = async (payload: ChangePasswordPayload): Promise<{ message: string }> => {
   const res = await fetchAPI<{ message: string }>(`${ACCOUNT_BASE_URL}/password`, {
     method: 'PUT',
-    body: payload,
+    body: {
+      currentPassword: encodeSecret(payload.currentPassword),
+      newPassword: encodeSecret(payload.newPassword),
+    },
   });
 
   if (!res.ok) {
@@ -144,7 +148,10 @@ export const updateJournalPasscode = async (
 ): Promise<SetJournalPasscodeResponse> => {
   const res = await fetchAPI<SetJournalPasscodeResponse>(`${ACCOUNT_BASE_URL}/journal-passcode`, {
     method: 'PUT',
-    body: payload,
+    body: {
+      passcode: encodeSecret(payload.passcode),
+      ...(payload.currentPasscode ? { currentPasscode: encodeSecret(payload.currentPasscode) } : {}),
+    },
   });
 
   if (!res.ok) {

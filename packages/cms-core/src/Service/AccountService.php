@@ -34,7 +34,6 @@ final class AccountService
     public function __construct(
         private readonly Security $security,
         private readonly UserRepository $userRepository,
-        private readonly EntityManagerInterface $em,
         private readonly ValidatorInterface $validator,
         private readonly SerializerInterface $serializer,
         private readonly UserPasswordHasherInterface $hasher,
@@ -118,7 +117,7 @@ final class AccountService
         $user->setUpdatedAt($this->now());
 
         try {
-            $this->em->flush();
+            $this->userRepository->save($user, flush: true, isCreation: false);
 
             return $this->sendJson($user, Response::HTTP_OK, context: ['groups' => ['user.read']]);
         } catch (Throwable $e) {
@@ -167,7 +166,7 @@ final class AccountService
 
             $user->setEmail($cleanEmail);
             $user->setUpdatedAt($this->now());
-            $this->em->flush();
+            $this->userRepository->save($user, flush: true, isCreation: false);
         }
 
         return $this->sendJson($user, Response::HTTP_OK, context: ['groups' => ['user.read']]);
@@ -201,7 +200,7 @@ final class AccountService
 
         $user->setPassword($this->hasher->hashPassword($user, $dto->newPassword));
         $user->setUpdatedAt($this->now());
-        $this->em->flush();
+        $this->userRepository->save($user, flush: true, isCreation: false);
 
         return $this->sendJson(['message' => 'Mot de passe modifié avec succès.']);
     }
@@ -232,7 +231,7 @@ final class AccountService
             $user->setAvatar($fullAvatarUrl);
             $user->setUpdatedAt($this->now());
 
-            $this->em->flush();
+            $this->userRepository->save($user, flush: true, isCreation: false);
 
             return $this->sendJson($user, Response::HTTP_OK, context: ['groups' => ['user.read']]);
         } catch (FileUploadException $e) {

@@ -1,4 +1,3 @@
-import { useTheme } from '@/hooks/useTheme';
 import { useAuthStore } from '@/stores/auth.store';
 import { Avatar, Icon } from '@/ui/components/Base';
 import { Image } from '@/ui/components/Embed';
@@ -21,6 +20,7 @@ import {
   SidebarSection,
   SidebarToggle,
 } from '@/ui/components/Navigation';
+import { ThemeModeSwitcher } from '@/ui/components/Navigation';
 import { Text } from '@/ui/components/Typo';
 import React from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
@@ -105,6 +105,18 @@ const MenuActionContent = styled.div`
   gap: ${({ theme }) => theme.spacing[3]};
 `;
 
+// Assez large pour afficher les trois segments du sélecteur de thème
+const AccountMenu = styled(NavbarDropdownMenu)`
+  min-width: 18rem;
+`;
+
+const ThemeSetting = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.spacing[2]};
+  padding: ${({ theme }) => `${theme.spacing[2]} ${theme.spacing[3]}`};
+`;
+
 const UserProfilePreview = styled.div`
   display: flex;
   align-items: center;
@@ -145,7 +157,6 @@ const ARCHIVE_MODULES: NavModule[] = [
 // ---------------------------------------------------------------------------
 
 export const AppLayout: React.FC = () => {
-  const { isDark, toggleTheme } = useTheme();
   const { user } = useAuthStore();
   const location = useLocation();
 
@@ -165,7 +176,7 @@ export const AppLayout: React.FC = () => {
                 src="/images/logo.webp"
                 srcSet="/images/logo.webp"
                 width={32}
-                alt="Logo de l'application To-Do App"
+                alt="Logo de l'application Base App"
               />
             </BrandLink>
           </SidebarHeader>
@@ -250,7 +261,7 @@ export const AppLayout: React.FC = () => {
                   <Avatar name={user?.username ?? 'Utilisateur'} src={user?.avatar ?? undefined} size="base" />
                 </AvatarToggle>
 
-                <NavbarDropdownMenu align="right">
+                <AccountMenu align="right">
                   <NavbarDropdownItem as={Link} to="/profile">
                     <MenuActionContent>
                       <span>Mon profil</span>
@@ -260,12 +271,12 @@ export const AppLayout: React.FC = () => {
 
                   <NavbarDropdownDivider />
 
-                  <NavbarDropdownItem onClick={toggleTheme}>
-                    <MenuActionContent>
-                      <span>{isDark ? 'Mode clair' : 'Mode sombre'}</span>
-                      <Icon name={isDark ? 'weather-sunny' : 'weather-night'} size={18} />
-                    </MenuActionContent>
-                  </NavbarDropdownItem>
+                  <ThemeSetting>
+                    <Text size="xs" weight="semibold" color="muted">
+                      Apparence
+                    </Text>
+                    <ThemeModeSwitcher fullWidth />
+                  </ThemeSetting>
 
                   <NavbarDropdownDivider />
 
@@ -275,7 +286,7 @@ export const AppLayout: React.FC = () => {
                       <Icon name="logout" size={18} />
                     </MenuActionContent>
                   </NavbarDropdownItem>
-                </NavbarDropdownMenu>
+                </AccountMenu>
               </NavbarDropdown>
             </div>
           </Navbar>

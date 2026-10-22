@@ -9,8 +9,9 @@ import * as S from './JournalCard.styles';
 export const JournalCard: React.FC<{
   entry: Entry;
   onTogglePin?: (entry: Entry) => void;
-}> = ({ entry }) => {
+}> = ({ entry, onTogglePin }) => {
   const navigate = useNavigate();
+  const isPinned = Boolean(entry.is_pinned);
 
   const dateObj = new Date(entry.created_at);
   const monthStr = dateObj.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
@@ -55,7 +56,23 @@ export const JournalCard: React.FC<{
           )}
         </S.HeaderLeft>
 
-        {moodMeta && <S.MoodBadge title={moodMeta.label}>{moodMeta.emoji}</S.MoodBadge>}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          {moodMeta && <S.MoodBadge title={moodMeta.label}>{moodMeta.emoji}</S.MoodBadge>}
+          {onTogglePin && (
+            <S.PinBtn
+              type="button"
+              $pinned={isPinned}
+              title={isPinned ? 'Détacher' : 'Épingler'}
+              onClick={(e) => {
+                // Évite de déclencher la navigation de la carte
+                e.stopPropagation();
+                onTogglePin(entry);
+              }}
+            >
+              <Icon name={isPinned ? 'pin' : 'pin-outline'} size={16} />
+            </S.PinBtn>
+          )}
+        </div>
       </S.Header>
 
       {visibleMedias.length > 0 && (

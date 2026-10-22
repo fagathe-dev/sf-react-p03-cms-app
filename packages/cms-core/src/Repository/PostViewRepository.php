@@ -1,12 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Fagathe\CmsCore\Repository;
 
-use Fagathe\CmsCore\Entity\Post;
-use Fagathe\CmsCore\Entity\PostView;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Doctrine\ORM\Exception\ORMException;
 use Doctrine\Persistence\ManagerRegistry;
+use Fagathe\CmsCore\Entity\Post;
+use Fagathe\CmsCore\Entity\PostView;
+use Fagathe\CorePhp\Trait\DatetimeTrait;
 use Symfony\Bridge\Doctrine\Types\UuidType;
 
 /**
@@ -14,6 +18,8 @@ use Symfony\Bridge\Doctrine\Types\UuidType;
  */
 class PostViewRepository extends ServiceEntityRepository
 {
+    use DatetimeTrait;
+
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, PostView::class);
@@ -25,7 +31,7 @@ class PostViewRepository extends ServiceEntityRepository
      */
     public function registerOrganicView(Post $post, string $visitorHash): bool
     {
-        $today = (new \DateTimeImmutable())->setTime(0, 0, 0);
+        $today = $this->now()->setTime(0, 0, 0);
 
         $alreadyViewed = (int) $this->createQueryBuilder('pv')
             ->select('COUNT(pv.id)')
@@ -46,8 +52,9 @@ class PostViewRepository extends ServiceEntityRepository
 
         try {
             $postView = new PostView($post, $visitorHash);
-            $em->persist($postView);
-            $em->flush();
+            if (!$this->save($postView, flush: true, isCreation: true)) {
+                return false;
+            }
 
             // Incrémentation atomique en base pour éviter les conflits d'accès concurrents
             $em->createQueryBuilder()
@@ -63,6 +70,36 @@ class PostViewRepository extends ServiceEntityRepository
 
             return true;
         } catch (UniqueConstraintViolationException) {
+            return false;
+        }
+    }
+
+    public function remove(PostView $postView, bool $flush = true): bool
+    {
+        try {
+            $this->getEntityManager()->remove($postView);
+
+            if ($flush) {
+                $this->getEntityManager()->flush();
+            }
+
+            return true;
+        } catch (ORMException) {
+            return false;
+        }
+    }
+
+    public function save(PostView $postView, bool $flush = true, bool $isCreation = false): bool
+    {
+        try {
+            $this->getEntityManager()->persist($postView);
+
+            if ($flush) {
+                $this->getEntityManager()->flush();
+            }
+
+            return true;
+        } catch (ORMException) {
             return false;
         }
     }

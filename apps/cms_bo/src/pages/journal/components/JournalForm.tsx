@@ -34,7 +34,7 @@ export const JournalForm: React.FC<JournalFormProps> = ({
   const [color, setColor] = useState<ColorEnum | null>(initialEntry?.color || null);
   const [tagId, setTagId] = useState<string | null>(initialEntry?.tag?.id || null);
   const [location, setLocation] = useState<EntryLocation | null>(initialEntry?.location || null);
-  const [isPinned, setIsPinned] = useState(Boolean(initialEntry?.isPinned));
+  const [isPinned, setIsPinned] = useState(Boolean(initialEntry?.is_pinned));
 
   // États dédiés aux médias (uniquement en mode modification)
   const [existingMedias, setExistingMedias] = useState<EntryMedia[]>(initialEntry?.entryMedia || []);

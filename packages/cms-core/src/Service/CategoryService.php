@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Fagathe\CmsCore\Service;
 
-use Doctrine\ORM\EntityManagerInterface;
 use Fagathe\CmsCore\Dto\Category\SaveCategoryDto;
 use Fagathe\CmsCore\Entity\Category;
 use Fagathe\CmsCore\Repository\CategoryRepository;
@@ -29,7 +28,6 @@ final class CategoryService
 
     public function __construct(
         private readonly CategoryRepository $categoryRepository,
-        private readonly EntityManagerInterface $em,
         private readonly SerializerInterface $serializer,
         private readonly ValidatorInterface $validator,
         private readonly SluggerInterface $slugger,
@@ -89,36 +87,23 @@ final class CategoryService
             return $this->sendViolations($entityViolations);
         }
 
-        try {
-            $this->em->persist($category);
-            $this->em->flush();
-
-            $this->generateLog(
-                LoggerLevelEnum::Info,
-                [
-                    'message' => 'Catégorie créée avec succès',
-                    'data'    => ['category_id' => (string) $category->getId(), 'slug' => $category->getSlug()],
-                ],
-                ['action' => 'category.create.success']
-            );
-
-            return $this->sendJson($category, Response::HTTP_CREATED, context: ['groups' => ['category.read']]);
-        } catch (Throwable $e) {
-            $this->generateLog(
-                LoggerLevelEnum::Error,
-                [
-                    'message'   => 'Erreur lors de la création de la catégorie',
-                    'data'      => ['name' => $dto->name],
-                    'exception' => $e->getMessage(),
-                ],
-                ['action' => 'category.create.error']
-            );
-
+        if (!$this->categoryRepository->save($category, flush: true, isCreation: true)) {
             return $this->sendJson(
                 ['message' => 'Erreur interne lors de la création de la catégorie.'],
                 Response::HTTP_INTERNAL_SERVER_ERROR
             );
         }
+
+        $this->generateLog(
+            LoggerLevelEnum::Info,
+            [
+                'message' => 'Catégorie créée avec succès',
+                'data'    => ['category_id' => (string) $category->getId(), 'slug' => $category->getSlug()],
+            ],
+            ['action' => 'category.create.success']
+        );
+
+        return $this->sendJson($category, Response::HTTP_CREATED, context: ['groups' => ['category.read']]);
     }
 
     public function update(string $id, Request $request): object
@@ -145,33 +130,20 @@ final class CategoryService
         }
 
         $this->hydrateCategory($category, $dto, isNew: false);
-        $category->setUpdatedAt($this->now());
 
         $entityViolations = $this->validator->validate($category);
         if (count($entityViolations) > 0) {
             return $this->sendViolations($entityViolations);
         }
 
-        try {
-            $this->em->flush();
-
-            return $this->sendJson($category, Response::HTTP_OK, context: ['groups' => ['category.read']]);
-        } catch (Throwable $e) {
-            $this->generateLog(
-                LoggerLevelEnum::Error,
-                [
-                    'message'   => 'Erreur lors de la mise à jour de la catégorie',
-                    'data'      => ['category_id' => $id],
-                    'exception' => $e->getMessage(),
-                ],
-                ['action' => 'category.update.error']
-            );
-
+        if (!$this->categoryRepository->save($category, flush: true, isCreation: false)) {
             return $this->sendJson(
                 ['message' => 'Erreur interne lors de la mise à jour de la catégorie.'],
                 Response::HTTP_INTERNAL_SERVER_ERROR
             );
         }
+
+        return $this->sendJson($category, Response::HTTP_OK, context: ['groups' => ['category.read']]);
     }
 
     public function delete(string $id): object
@@ -185,36 +157,23 @@ final class CategoryService
             return $this->sendForbidden('Vous n\'avez pas les droits pour supprimer cette catégorie.');
         }
 
-        try {
-            $this->em->remove($category);
-            $this->em->flush();
-
-            $this->generateLog(
-                LoggerLevelEnum::Info,
-                [
-                    'message' => 'Catégorie supprimée',
-                    'data'    => ['category_id' => $id, 'name' => $category->getName()],
-                ],
-                ['action' => 'category.delete.success']
-            );
-
-            return $this->sendNoContent();
-        } catch (Throwable $e) {
-            $this->generateLog(
-                LoggerLevelEnum::Error,
-                [
-                    'message'   => 'Erreur lors de la suppression de la catégorie',
-                    'data'      => ['category_id' => $id],
-                    'exception' => $e->getMessage(),
-                ],
-                ['action' => 'category.delete.error']
-            );
-
+        if (!$this->categoryRepository->remove($category, flush: true)) {
             return $this->sendJson(
                 ['message' => 'Erreur interne lors de la suppression de la catégorie.'],
                 Response::HTTP_INTERNAL_SERVER_ERROR
             );
         }
+
+        $this->generateLog(
+            LoggerLevelEnum::Info,
+            [
+                'message' => 'Catégorie supprimée',
+                'data'    => ['category_id' => $id, 'name' => $category->getName()],
+            ],
+            ['action' => 'category.delete.success']
+        );
+
+        return $this->sendNoContent();
     }
 
     private function hydrateCategory(Category $category, SaveCategoryDto $dto, bool $isNew): void

@@ -1,6 +1,6 @@
 import { useTheme } from '@/hooks/useTheme';
 import { Icon } from '@/ui/components/Base/Icon';
-import { IconButton } from '@/ui/components/Base/IconButton';
+import { ThemeModeSwitcher } from '@/ui/components/Navigation/ThemeModeSwitcher';
 import { Text } from '@/ui/components/Typo/Text';
 import { Outlet } from 'react-router-dom';
 import styled from 'styled-components';
@@ -37,27 +37,18 @@ const FormBox = styled.div`
 `;
 
 export const AuthLayout = () => {
-  const { theme, isDark, toggleTheme } = useTheme();
+  const { theme } = useTheme();
 
   return (
     <AuthContainer>
       <ThemeToggleWrapper>
-        <IconButton
-          name={isDark ? 'weather-sunny' : 'weather-night'}
-          aria-label={isDark ? 'Mode clair' : 'Mode sombre'}
-          onClick={toggleTheme}
-          size="base"
-        />
+        <ThemeModeSwitcher />
       </ThemeToggleWrapper>
 
       <BrandHeader>
-        <Icon
-          name="check-decagram"
-          size={40}
-          color={theme.colors.primary.base}
-        />
-        <Text weight="bold" size="xl" color='secondary'>
-          To-Do App
+        <Icon name="check-decagram" size={40} color={theme.colors.primary.base} />
+        <Text weight="bold" size="xl" color="secondary">
+          Base App
         </Text>
       </BrandHeader>
 

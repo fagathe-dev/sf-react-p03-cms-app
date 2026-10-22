@@ -48,7 +48,7 @@ const TitleInput = styled.input`
 
 const ContentArea = styled.textarea`
   width: 100%;
-  min-height: 80vh;
+  min-height: 70vh;
   padding: 10px 16px;
   background: transparent;
   border: none;
@@ -63,7 +63,7 @@ const ContentArea = styled.textarea`
 const PreviewArea = styled.div`
   width: 100%;
   min-height: 30vh;
-  max-height: 85vh;
+  max-height: 70vh;
   overflow-y: auto;
   padding: 10px 16px;
   font-size: 14px;

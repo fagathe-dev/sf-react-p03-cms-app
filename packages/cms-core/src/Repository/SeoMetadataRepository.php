@@ -5,15 +5,19 @@ declare(strict_types=1);
 namespace Fagathe\CmsCore\Repository;
 
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\Exception\ORMException;
 use Doctrine\Persistence\ManagerRegistry;
 use Fagathe\CmsCore\Entity\SeoMetadata;
 use Fagathe\CmsCore\Enum\Seo\SeoTargetType;
+use Fagathe\CorePhp\Trait\DatetimeTrait;
 
 /**
  * @extends ServiceEntityRepository<SeoMetadata>
  */
 class SeoMetadataRepository extends ServiceEntityRepository
 {
+    use DatetimeTrait;
+
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, SeoMetadata::class);
@@ -32,6 +36,46 @@ class SeoMetadataRepository extends ServiceEntityRepository
             'targetType'       => $targetType,
             'targetIdentifier' => trim($targetIdentifier),
         ]);
+    }
+
+    public function remove(SeoMetadata $seoMetadata, bool $flush = true): bool
+    {
+        try {
+            $this->getEntityManager()->remove($seoMetadata);
+
+            if ($flush) {
+                $this->getEntityManager()->flush();
+            }
+
+            return true;
+        } catch (ORMException) {
+            return false;
+        }
+    }
+
+    public function save(SeoMetadata $seoMetadata, bool $flush = true, bool $isCreation = false): bool
+    {
+        $now = $this->now();
+
+        if ($isCreation && $seoMetadata->getCreatedAt() === null) {
+            $seoMetadata->setCreatedAt($now);
+        }
+
+        if (!$isCreation) {
+            $seoMetadata->setUpdatedAt($now);
+        }
+
+        try {
+            $this->getEntityManager()->persist($seoMetadata);
+
+            if ($flush) {
+                $this->getEntityManager()->flush();
+            }
+
+            return true;
+        } catch (ORMException) {
+            return false;
+        }
     }
 
     //    /**

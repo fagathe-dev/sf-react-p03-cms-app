@@ -1,20 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Fagathe\CmsCore\Repository;
 
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\Exception\ORMException;
 use Doctrine\Persistence\ManagerRegistry;
 use Fagathe\CmsCore\Entity\BlocContent;
 use Fagathe\CmsCore\Enum\Post\BlockType;
 use Fagathe\CmsCore\Enum\Post\PostStatus;
 use Fagathe\CmsCore\Trait\FullTextSearchTrait;
+use Fagathe\CorePhp\Trait\DatetimeTrait;
 
 /**
  * @extends ServiceEntityRepository<BlocContent>
  */
 class BlocContentRepository extends ServiceEntityRepository
 {
-    use FullTextSearchTrait;
+    use DatetimeTrait, FullTextSearchTrait;
 
     public function __construct(ManagerRegistry $registry)
     {
@@ -53,6 +57,46 @@ class BlocContentRepository extends ServiceEntityRepository
         }
 
         return $qb->getQuery()->getResult();
+    }
+
+    public function remove(BlocContent $blocContent, bool $flush = true): bool
+    {
+        try {
+            $this->getEntityManager()->remove($blocContent);
+
+            if ($flush) {
+                $this->getEntityManager()->flush();
+            }
+
+            return true;
+        } catch (ORMException) {
+            return false;
+        }
+    }
+
+    public function save(BlocContent $blocContent, bool $flush = true, bool $isCreation = false): bool
+    {
+        $now = $this->now();
+
+        if ($isCreation && $blocContent->getCreatedAt() === null) {
+            $blocContent->setCreatedAt($now);
+        }
+
+        if (!$isCreation) {
+            $blocContent->setUpdatedAt($now);
+        }
+
+        try {
+            $this->getEntityManager()->persist($blocContent);
+
+            if ($flush) {
+                $this->getEntityManager()->flush();
+            }
+
+            return true;
+        } catch (ORMException) {
+            return false;
+        }
     }
 
     //    /**

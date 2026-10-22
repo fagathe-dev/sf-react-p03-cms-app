@@ -170,3 +170,30 @@ export const LocationBadge = styled.div`
     text-overflow: ellipsis;
   }
 `;
+
+export const PinBtn = styled.button<{ $pinned: boolean }>`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  color: ${({ $pinned, theme }) => ($pinned ? theme.colors.primary.base : theme.colors.text.muted)};
+  opacity: ${({ $pinned }) => ($pinned ? 1 : 0)};
+  transition:
+    opacity 0.15s ease,
+    background-color 0.15s ease;
+
+  ${Card}:hover & {
+    opacity: 1;
+  }
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.06);
+    opacity: 1;
+  }
+  @media (hover: none) {
+    opacity: 1;
+  }
+`;

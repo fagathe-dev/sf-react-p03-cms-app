@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Fagathe\CmsCore\Service;
 
-use Doctrine\ORM\EntityManagerInterface;
 use Fagathe\CmsCore\Contract\ArticleSeoInterface;
 use Fagathe\CmsCore\Contract\TaxonomySeoInterface;
 use Fagathe\CmsCore\Dto\Seo\SaveSeoMetadataDto;
@@ -37,7 +36,6 @@ final class SeoMetadataService
 
     public function __construct(
         private readonly SeoMetadataRepository $seoRepository,
-        private readonly EntityManagerInterface $em,
         private readonly SerializerInterface $serializer,
         private readonly ValidatorInterface $validator,
         private readonly SeoSchemaGenerator $seoSchemaGenerator,
@@ -78,55 +76,37 @@ final class SeoMetadataService
         $seo = $existing ?? new SeoMetadata();
 
         $this->hydrateSeoMetadata($seo, $dto);
-        if (!$isNew) {
-            $seo->setUpdatedAt($this->now());
-        }
 
         $entityViolations = $this->validator->validate($seo);
         if (count($entityViolations) > 0) {
             return $this->sendViolations($entityViolations);
         }
 
-        try {
-            if ($isNew) {
-                $this->em->persist($seo);
-            }
-            $this->em->flush();
-
-            $this->generateLog(
-                LoggerLevelEnum::Info,
-                [
-                    'message' => $isNew ? 'Métadonnées SEO créées' : 'Métadonnées SEO mises à jour',
-                    'data'    => [
-                        'seo_id'            => (string) $seo->getId(),
-                        'target_type'       => $seo->getTargetType()->value,
-                        'target_identifier' => $seo->getTargetIdentifier(),
-                    ],
-                ],
-                ['action' => $isNew ? 'seo.create.success' : 'seo.update.success']
-            );
-
-            return $this->sendJson(
-                $seo,
-                $isNew ? Response::HTTP_CREATED : Response::HTTP_OK,
-                context: ['groups' => ['seo.read']]
-            );
-        } catch (Throwable $e) {
-            $this->generateLog(
-                LoggerLevelEnum::Error,
-                [
-                    'message'   => 'Erreur lors de la sauvegarde des métadonnées SEO',
-                    'data'      => ['target_type' => $dto->targetType, 'target_identifier' => $dto->targetIdentifier],
-                    'exception' => $e->getMessage(),
-                ],
-                ['action' => 'seo.save.error']
-            );
-
+        if (!$this->seoRepository->save($seo, flush: true, isCreation: $isNew)) {
             return $this->sendJson(
                 ['message' => 'Erreur interne lors de l\'enregistrement des métadonnées SEO.'],
                 Response::HTTP_INTERNAL_SERVER_ERROR
             );
         }
+
+        $this->generateLog(
+            LoggerLevelEnum::Info,
+            [
+                'message' => $isNew ? 'Métadonnées SEO créées' : 'Métadonnées SEO mises à jour',
+                'data'    => [
+                    'seo_id'            => (string) $seo->getId(),
+                    'target_type'       => $seo->getTargetType()->value,
+                    'target_identifier' => $seo->getTargetIdentifier(),
+                ],
+            ],
+            ['action' => $isNew ? 'seo.create.success' : 'seo.update.success']
+        );
+
+        return $this->sendJson(
+            $seo,
+            $isNew ? Response::HTTP_CREATED : Response::HTTP_OK,
+            context: ['groups' => ['seo.read']]
+        );
     }
 
     public function delete(string $id): object
@@ -140,8 +120,12 @@ final class SeoMetadataService
             return $this->sendForbidden('Vous n\'avez pas les droits pour supprimer ces métadonnées SEO.');
         }
 
-        $this->em->remove($seo);
-        $this->em->flush();
+        if (!$this->seoRepository->remove($seo, flush: true)) {
+            return $this->sendJson(
+                ['message' => 'Erreur interne lors de la suppression des métadonnées SEO.'],
+                Response::HTTP_INTERNAL_SERVER_ERROR
+            );
+        }
 
         return $this->sendNoContent();
     }

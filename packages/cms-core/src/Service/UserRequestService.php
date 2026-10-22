@@ -19,8 +19,7 @@ final class UserRequestService
 {
     use DatetimeTrait, LoggerTrait;
 
-    public function __construct(
-        private readonly EntityManagerInterface $em,
+   public function __construct(
         private readonly UserRequestRepository $repository,
         private readonly Security $security,
     ) {}
@@ -55,8 +54,7 @@ final class UserRequestService
         }
 
         try {
-            $this->em->persist($request);
-            $this->em->flush();
+            $this->repository->save($request, flush: true, isCreation: true);
 
             $this->generateLog(
                 LoggerLevelEnum::Info,
@@ -118,7 +116,7 @@ final class UserRequestService
     {
         $request->setIsUsed(true);
         $request->setUpdatedAt($this->now());
-        $this->em->flush();
+        $this->repository->save($request, flush: true, isCreation: false);
     }
 
     private function invalidateActiveRequests(User $user, UserRequestTypeEnum $type): void

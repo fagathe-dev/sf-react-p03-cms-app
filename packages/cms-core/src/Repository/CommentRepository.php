@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Fagathe\CmsCore\Repository;
 
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\Exception\ORMException;
 use Doctrine\Persistence\ManagerRegistry;
 use Fagathe\CmsCore\Entity\Comment;
 use Fagathe\CmsCore\Entity\Post;
 use Fagathe\CmsCore\Enum\CommentStatus;
+use Fagathe\CorePhp\Trait\DatetimeTrait;
 use Symfony\Bridge\Doctrine\Types\UuidType;
 
 /**
@@ -16,6 +18,8 @@ use Symfony\Bridge\Doctrine\Types\UuidType;
  */
 class CommentRepository extends ServiceEntityRepository
 {
+    use DatetimeTrait;
+
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Comment::class);
@@ -61,6 +65,46 @@ class CommentRepository extends ServiceEntityRepository
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
+    }
+
+    public function remove(Comment $comment, bool $flush = true): bool
+    {
+        try {
+            $this->getEntityManager()->remove($comment);
+
+            if ($flush) {
+                $this->getEntityManager()->flush();
+            }
+
+            return true;
+        } catch (ORMException) {
+            return false;
+        }
+    }
+
+    public function save(Comment $comment, bool $flush = true, bool $isCreation = false): bool
+    {
+        $now = $this->now();
+
+        if ($isCreation && $comment->getCreatedAt() === null) {
+            $comment->setCreatedAt($now);
+        }
+
+        if (!$isCreation) {
+            $comment->setUpdatedAt($now);
+        }
+
+        try {
+            $this->getEntityManager()->persist($comment);
+
+            if ($flush) {
+                $this->getEntityManager()->flush();
+            }
+
+            return true;
+        } catch (ORMException) {
+            return false;
+        }
     }
 
     //    /**

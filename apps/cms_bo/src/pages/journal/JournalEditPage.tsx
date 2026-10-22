@@ -31,7 +31,7 @@ export const JournalEditPage: React.FC = () => {
     try {
       setSaving(true);
       await updateEntry(journalId, payload);
-      navigate(`/journal/${journalId}`);
+      console.log({payload})
     } finally {
       setSaving(false);
     }

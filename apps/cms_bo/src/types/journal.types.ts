@@ -66,7 +66,7 @@ export interface Entry {
   slug?: string | null;
   color?: ColorEnum | null;
   mood?: MoodEnum | null;
-  isPinned: boolean;
+  is_pinned?: boolean | null;
   tag?: Tag | null;
   location?: EntryLocation | null;
   entryMedia?: EntryMedia[];

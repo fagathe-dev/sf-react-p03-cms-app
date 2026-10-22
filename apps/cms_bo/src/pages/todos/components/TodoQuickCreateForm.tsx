@@ -16,7 +16,7 @@ const Container = styled.form<{ $focused: boolean }>`
   display: flex;
   align-items: center;
   gap: ${({ theme }) => theme.spacing[2.5]};
-  padding: ${({ theme }) => `${theme.spacing[3]}${theme.spacing[3.5]}`};
+  padding: ${({ theme }) => `${theme.spacing[3]} ${theme.spacing[3.5]}`};
   background-color: ${({ theme }) => theme.colors.background.surface};
   border: 1px solid
     ${({ $focused, theme }) =>
@@ -56,7 +56,7 @@ const Input = styled.input`
 `;
 
 const AddBtn = styled.button`
-  padding: ${({ theme }) => `${theme.spacing[1]}${theme.spacing[3]}`};
+  padding: ${({ theme }) => `${theme.spacing[1]} ${theme.spacing[3]}`};
   background-color: ${({ theme }) => theme.colors.primary.base};
   color: #fff;
   border: none;

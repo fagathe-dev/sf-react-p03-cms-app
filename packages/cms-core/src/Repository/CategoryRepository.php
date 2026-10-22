@@ -1,18 +1,22 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Fagathe\CmsCore\Repository;
 
-use Fagathe\CmsCore\Entity\Category;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\Exception\ORMException;
 use Doctrine\Persistence\ManagerRegistry;
+use Fagathe\CmsCore\Entity\Category;
 use Fagathe\CmsCore\Trait\FullTextSearchTrait;
+use Fagathe\CorePhp\Trait\DatetimeTrait;
 
 /**
  * @extends ServiceEntityRepository<Category>
  */
 class CategoryRepository extends ServiceEntityRepository
 {
-    use FullTextSearchTrait;
+    use DatetimeTrait, FullTextSearchTrait;
 
     public function __construct(ManagerRegistry $registry)
     {
@@ -38,6 +42,50 @@ class CategoryRepository extends ServiceEntityRepository
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
+    }
+
+    public function remove(Category $category, bool $flush = true): bool
+    {
+        try {
+            foreach ($category->getPosts() as $post) {
+                $post->setCategory(null);
+            }
+
+            $this->getEntityManager()->remove($category);
+
+            if ($flush) {
+                $this->getEntityManager()->flush();
+            }
+
+            return true;
+        } catch (ORMException) {
+            return false;
+        }
+    }
+
+    public function save(Category $category, bool $flush = true, bool $isCreation = false): bool
+    {
+        $now = $this->now();
+
+        if ($isCreation && $category->getCreatedAt() === null) {
+            $category->setCreatedAt($now);
+        }
+
+        if (!$isCreation) {
+            $category->setUpdatedAt($now);
+        }
+
+        try {
+            $this->getEntityManager()->persist($category);
+
+            if ($flush) {
+                $this->getEntityManager()->flush();
+            }
+
+            return true;
+        } catch (ORMException) {
+            return false;
+        }
     }
 
     //    /**

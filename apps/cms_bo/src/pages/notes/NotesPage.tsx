@@ -57,6 +57,7 @@ export const NotesPage: React.FC = () => {
     const nextPinned = !note.is_pinned;
     setNotes((prev) => prev.map((n) => (n.id === note.id ? { ...n, is_pinned: nextPinned } : n)));
     try {
+      console.log()
       await updateNote(note.id, { is_pinned: nextPinned });
     } catch {
       setNotes((prev) => prev.map((n) => (n.id === note.id ? { ...n, is_pinned: note.is_pinned } : n)));

@@ -6,6 +6,7 @@ import {
   JournalEditPage,
   JournalsPage,
   LoginPage,
+  LogoutPage,
   NotesArchivePage,
   NotesPage,
   NotesTrashPage,
@@ -23,6 +24,10 @@ export const router = createBrowserRouter([
   {
     element: <ProtectedRoute />,
     children: [
+      {
+        path: '/logout',
+        element: <LogoutPage />, // <-- 2. Branchement sur la route /logout
+      },
       {
         element: <AppLayout />,
         children: [
