@@ -12,7 +12,6 @@ import {
   ChangeAvatarForm,
   ChangeEmailForm,
   ChangeInformationsForm,
-  ChangeJournalPasscodeForm,
   ChangePasswordForm,
 } from './components';
 
@@ -122,7 +121,6 @@ export const ProfilePage: React.FC = () => {
           <Stack>
             <ChangeEmailForm />
             <ChangePasswordForm />
-            <ChangeJournalPasscodeForm />
           </Stack>
         </TabContent>
 

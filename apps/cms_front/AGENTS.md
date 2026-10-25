@@ -106,3 +106,30 @@ things up in the project instead of relying on memory:
 - Read the installed source and docblocks under `vendor/`.
 - Docs: https://symfony.com/doc/current/ (switch to the version matching
   `composer.json` if it differs).
+
+## Assets (TypeScript + SCSS)
+
+No Stimulus, no Symfony UX, no AssetMapper / importmap: sources live in `assets/`, are compiled by
+`scripts/compile-*.js` into `public/css` and `public/js` (build outputs, git-ignored), and are loaded
+in Twig with `asset()` (`base.html.twig`: `css/app.css`, then `js/main.js` as `type="module"`).
+
+| Command | Effect |
+|---|---|
+| `npm run dev` | Watch SCSS (only recompiles the entry points a change affects) and TS in parallel |
+| `npm run compile` | Development build (source maps) |
+| `npm run build` | Minified build + `tsc --noEmit` type check; exit code 1 on error |
+
+- SCSS (Dart Sass): every top-level `assets/scss/*.scss` that is not a `_partial` is an entry point
+  (`app.scss` → `public/css/app.css`). `abstracts/` = primitives, functions, mixins (no CSS output,
+  `@use '../abstracts' as *;`); `foundation/` = System Tokens (`--cms-*` CSS variables), reset,
+  typography; then `layout/`, `components/`, `utilities/`, each with an `_index.scss` of `@forward`.
+  Components only use `--cms-*` tokens, never primitives. `@use`/`@forward`, never `@import`.
+- TS (esbuild, ESM, code splitting into `public/js/chunks/`): entry points are `assets/ts/main.ts`
+  (every page) and `assets/ts/pages/*.ts` (one per page, added in the template's `javascripts` block
+  with `<script type="module" src="{{ asset('js/pages/{name}.js') }}">`).
+  `interactions/events/` = delegated listeners on `document` set once; `interactions/components/` =
+  idempotent `init*(root = document)` per component; `services/` = shared state; `components/` =
+  classes that create DOM. Vanilla strict TypeScript, behaviour enabled by `data-*` attributes,
+  no inline JS in templates. Aliases: `@/…` → `assets/ts/…`, `@components/…`.
+- CSRF: `interactions/events/csrf-protection.ts` double-submits Symfony's stateless CSRF token
+  (replaces the Stimulus `csrf_protection_controller.js`); submit forms with `requestSubmit()`.

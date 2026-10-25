@@ -1,0 +1,15 @@
+@use 'sass:map';
+@use 'primitives' as *;
+
+/// Couleur d'une palette primitive (réservé à foundation/_tokens.scss)
+@function palette($palette, $step) {
+  @if not map.has-key($palette, $step) {
+    @error "Teinte #{$step} absente de la palette.";
+  }
+  @return map.get($palette, $step);
+}
+
+/// Espacement de l'échelle de 4px : space(4) → var(--cms-space-4)
+@function space($step) {
+  @return var(--cms-space-#{$step});
+}

@@ -2,9 +2,9 @@ import { Button } from '@/ui/components/Base/Button';
 import { Video } from '@/ui/components/Embed/Video';
 import { ChoiceField } from '@/ui/components/Forms/Fields/ChoiceField';
 import { TextField } from '@/ui/components/Forms/Fields/TextField';
-import { FileDropzone } from '@/ui/components/Forms/FileDropzone';
 import { Flex } from '@/ui/components/Grid/Flex';
 import { BaseComponentProps } from '@/ui/types';
+import { MediaSourceField, MediaUploadHandler } from './MediaSourceField';
 
 export interface VideoBlockData {
   url: string;
@@ -15,31 +15,23 @@ export interface VideoBlockData {
 export interface VideoBlockProps extends BaseComponentProps {
   data: VideoBlockData;
   onChange: (updated: VideoBlockData) => void;
+  /** Téléversement réel du fichier ; sans lui, seule la saisie d'URL est proposée */
+  onUpload?: MediaUploadHandler;
 }
 
-export const VideoBlock = ({ data, onChange, ...rest }: VideoBlockProps) => {
-  const handleUpload = (files: File[]) => {
-    const file = files[0];
-    if (!file) return;
-    onChange({ ...data, url: URL.createObjectURL(file) });
-  };
-
+export const VideoBlock = ({ data, onChange, onUpload, ...rest }: VideoBlockProps) => {
   if (!data.url) {
     return (
-      <div {...rest}>
-        <FileDropzone
-          accept="video/mp4,video/webm"
-          label="Téléverser un fichier vidéo"
-          maxSizeMb={50}
-          onFilesSelected={handleUpload}
-        />
-        <TextField
-          label="Ou URL de la vidéo"
-          placeholder="https://domaine.com/video.mp4"
-          value={data.url}
-          onChange={(e) => onChange({ ...data, url: e.target.value })}
-        />
-      </div>
+      <MediaSourceField
+        accept="video/mp4,video/webm"
+        label="Téléverser un fichier vidéo"
+        maxSizeMb={50}
+        urlLabel="Ou URL de la vidéo"
+        urlPlaceholder="https://domaine.com/video.mp4"
+        onUpload={onUpload}
+        onSelect={([url]) => url && onChange({ ...data, url })}
+        {...rest}
+      />
     );
   }
 
@@ -54,7 +46,7 @@ export const VideoBlock = ({ data, onChange, ...rest }: VideoBlockProps) => {
         onChange={(e) => onChange({ ...data, caption: e.target.value })}
       />
 
-      <Flex justify="space-between" align="center">
+      <Flex justify="space-between" align="center" gap="1rem" wrap="wrap">
         <ChoiceField
           label="Ratio vidéo"
           value={data.aspectRatio || '16/9'}

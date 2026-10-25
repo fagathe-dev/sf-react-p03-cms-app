@@ -1,0 +1,40 @@
+# config/packages/monolog.yaml
+monolog:
+  channels:
+    - deprecation
+    - security # authentification (ApiAuthenticator, JWT)
+
+when@dev:
+  monolog:
+    handlers:
+      main:
+        type: stream
+        path: "%kernel.logs_dir%/%kernel.environment%.log"
+        level: debug
+        channels: ["!event"]
+      security:
+        type: stream
+        path: "%kernel.logs_dir%/security.log"
+        level: debug
+        channels: ["security"]
+
+when@prod:
+  monolog:
+    handlers:
+      main:
+        type: fingers_crossed # bufferise et n'écrit que si une erreur survient
+        action_level: error
+        handler: nested
+        excluded_http_codes: [404, 405]
+        buffer_size: 50
+      nested:
+        type: rotating_file # un fichier par jour, 14 jours conservés
+        path: "%kernel.logs_dir%/%kernel.environment%.log"
+        level: debug
+        max_files: 14
+        formatter: monolog.formatter.json
+      deprecation:
+        type: rotating_file
+        channels: [deprecation]
+        path: "%kernel.logs_dir%/deprecation.log"
+        max_files: 7

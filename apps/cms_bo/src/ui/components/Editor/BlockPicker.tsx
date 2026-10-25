@@ -1,39 +1,75 @@
-// frontend/src/ui/components/Editor/BlockPicker.tsx
 import { Button } from '@/ui/components/Base/Button';
 import { Icon } from '@/ui/components/Base/Icon';
 import { BaseComponentProps } from '@/ui/types';
 import { useState } from 'react';
 import styled from 'styled-components';
-
-export interface BlockTypeDefinition {
-  type: string;
-  label: string;
-  icon: string;
-  description?: string;
-}
-
-export const DEFAULT_CMS_BLOCKS: BlockTypeDefinition[] = [
-  { type: 'text', label: 'Texte riche', icon: 'format-pilcrow' },
-  { type: 'image', label: 'Image', icon: 'image-outline' },
-  { type: 'code', label: 'Code', icon: 'code-tags' },
-  { type: 'quote', label: 'Citation', icon: 'format-quote-close' },
-  { type: 'video', label: 'Vidéo', icon: 'video-outline' },
-  { type: 'table', label: 'Tableau', icon: 'table' },
-  { type: 'faq', label: 'FAQ / Accordéon', icon: 'help-circle-outline' },
-  { type: 'cta', label: 'Appel à l’action', icon: 'bullhorn-outline' },
-  { type: 'carousel', label: 'Carrousel', icon: 'view-carousel-outline' },
-];
+import { BlockTypeDefinition, DEFAULT_CMS_BLOCKS } from './blockDefaults';
 
 export interface BlockPickerProps extends BaseComponentProps {
   onSelectBlock: (type: string) => void;
   availableBlocks?: BlockTypeDefinition[];
+  /**
+   * `button` (défaut) : bouton « Ajouter un bloc de contenu ».
+   * `inline` : séparateur discret avec un « + », à placer entre deux blocs pour insérer à cet endroit.
+   */
+  variant?: 'button' | 'inline';
+  /** Libellé accessible du « + » en variante `inline` */
+  inlineLabel?: string;
 }
 
-const PickerContainer = styled.div`
+const PickerContainer = styled.div<{ $inline: boolean }>`
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin: ${({ theme }) => `${theme.spacing[3]} 0`};
+  margin: ${({ theme, $inline }) => ($inline ? `-${theme.spacing[2]} 0` : `${theme.spacing[3]} 0`)};
+`;
+
+const InlineTrigger = styled.div<{ $isOpen: boolean }>`
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: ${({ theme }) => theme.spacing[6]};
+  /* Discret entre les blocs, visible au survol ou au focus clavier */
+  opacity: ${({ $isOpen }) => ($isOpen ? 1 : 0)};
+  transition: opacity 0.15s ease;
+
+  &:hover,
+  &:focus-within {
+    opacity: 1;
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 50% 0 auto;
+    border-top: 1px dashed ${({ theme }) => theme.colors.primary.base};
+  }
+`;
+
+const InlineButton = styled.button`
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid ${({ theme }) => theme.colors.primary.base};
+  border-radius: ${({ theme }) => theme.radii.full};
+  background-color: ${({ theme }) => theme.colors.background.surface};
+  color: ${({ theme }) => theme.colors.primary.base};
+  cursor: pointer;
+
+  &:hover {
+    background-color: ${({ theme }) => theme.colors.primary.subtle};
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.colors.primary.base};
+    outline-offset: 2px;
+  }
 `;
 
 const GridMenu = styled.div`
@@ -73,15 +109,42 @@ const BlockOptionBtn = styled.button`
   }
 `;
 
-export const BlockPicker = ({ onSelectBlock, availableBlocks = DEFAULT_CMS_BLOCKS, ...rest }: BlockPickerProps) => {
+const OptionDescription = styled.span`
+  font-weight: ${({ theme }) => theme.typography.weights.regular};
+  color: ${({ theme }) => theme.colors.text.muted};
+  text-align: center;
+`;
+
+export const BlockPicker = ({
+  onSelectBlock,
+  availableBlocks = DEFAULT_CMS_BLOCKS,
+  variant = 'button',
+  inlineLabel = 'Insérer un bloc ici',
+  ...rest
+}: BlockPickerProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const isInline = variant === 'inline';
 
   return (
-    <PickerContainer {...rest}>
-      <Button variant={isOpen ? 'secondary' : 'outline'} size="sm" onClick={() => setIsOpen((prev) => !prev)}>
-        <Icon name={isOpen ? 'close' : 'plus'} size={16} />
-        {isOpen ? 'Fermer' : 'Ajouter un bloc de contenu'}
-      </Button>
+    <PickerContainer $inline={isInline} {...rest}>
+      {isInline ? (
+        <InlineTrigger $isOpen={isOpen}>
+          <InlineButton
+            type="button"
+            aria-label={isOpen ? 'Fermer' : inlineLabel}
+            aria-expanded={isOpen}
+            title={isOpen ? 'Fermer' : inlineLabel}
+            onClick={() => setIsOpen((prev) => !prev)}
+          >
+            <Icon name={isOpen ? 'close' : 'plus'} size={16} />
+          </InlineButton>
+        </InlineTrigger>
+      ) : (
+        <Button variant={isOpen ? 'secondary' : 'outline'} size="sm" onClick={() => setIsOpen((prev) => !prev)}>
+          <Icon name={isOpen ? 'close' : 'plus'} size={16} />
+          {isOpen ? 'Fermer' : 'Ajouter un bloc de contenu'}
+        </Button>
+      )}
 
       {isOpen && (
         <GridMenu>
@@ -96,6 +159,7 @@ export const BlockPicker = ({ onSelectBlock, availableBlocks = DEFAULT_CMS_BLOCK
             >
               <Icon name={b.icon} size={22} />
               <span>{b.label}</span>
+              {b.description && <OptionDescription>{b.description}</OptionDescription>}
             </BlockOptionBtn>
           ))}
         </GridMenu>

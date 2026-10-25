@@ -1,80 +1,143 @@
-import { AppLayout } from '@/layouts/AppLayout';
-import { AuthLayout } from '@/layouts/AuthLayout';
+// src/router/index.tsx
+import { AppLayout, AuthLayout } from '@/layouts';
 import {
-  JournalCreatePage,
-  JournalDetailsPage,
-  JournalEditPage,
-  JournalsPage,
+  CategoriesPage,
+  CategoryCreatePage,
+  CategoryEditPage,
+  CommentModerationPage,
+  // ForgotPasswordPage, // Lot 2 : mailer
   LoginPage,
   LogoutPage,
-  NotesArchivePage,
-  NotesPage,
-  NotesTrashPage,
+  PostCreatePage,
+  PostEditPage,
+  PostModerationPage,
+  PostPreviewPage,
+  PostsArchivePage,
+  PostSeoPage,
+  PostsPage,
+  PostsTrashPage,
   ProfilePage,
   RegisterPage,
+  // ResendOtpPage, // Lot 2 : mailer
+  // ResetPasswordPage, // Lot 2 : mailer
+  SearchPage,
+  SeoMetadataPage,
+  TagCreatePage,
+  TagEditPage,
   TagsPage,
-  TodoPage,
+  UserCreatePage,
+  UserDetailsPage,
+  UserEditPage,
+  UsersPage,
 } from '@/pages';
 import { ProtectedRoute } from '@/router/protectedRoute';
 import { PublicRoute } from '@/router/publicRoute';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 
 export const router = createBrowserRouter([
-  // 1. Espace connecté (Sidebar Dashboard via AppLayout)
+  // 0. Déconnexion (accessible dès qu'on clique sur Déconnexion)
   {
-    element: <ProtectedRoute />,
+    path: '/logout',
+    element: <LogoutPage />,
+  },
+
+  // 1. Espace Back-Office connecté (ROLE_CONTRIBUTOR minimum)
+  {
+    element: <ProtectedRoute minRole="ROLE_CONTRIBUTOR" />,
     children: [
-      {
-        path: '/logout',
-        element: <LogoutPage />, // <-- 2. Branchement sur la route /logout
-      },
       {
         element: <AppLayout />,
         children: [
-          // Redirection racine vers les todos
+          // Redirection racine vers la liste des articles
           {
             path: '/',
-            element: <Navigate to="/todos" replace />,
+            element: <Navigate to="/posts" replace />,
           },
 
-          // Module Todos
+          // Recherche globale Full-Text (SearchController)
           {
-            path: '/todos',
-            element: <TodoPage />,
+            path: '/search',
+            element: <SearchPage />,
           },
 
-          // Module Tags
+          // Module Articles, Médias & SEO d'article (PostController, PostMediaController, PostSeoController)
           {
-            path: '/tags',
-            element: <TagsPage />,
-          },
-
-          // Module Notes
-          {
-            path: '/notes',
-            element: <NotesPage />,
-          },
-          {
-            path: '/archives',
-            element: <NotesArchivePage />,
-          },
-          {
-            path: '/trash',
-            element: <NotesTrashPage />,
-          },
-
-          // Module Journal intime
-          {
-            path: '/journal',
+            path: '/posts',
             children: [
-              { index: true, element: <JournalsPage /> },
-              { path: 'new', element: <JournalCreatePage /> },
-              { path: ':journalId', element: <JournalDetailsPage /> },
-              { path: ':journalId/edit', element: <JournalEditPage /> },
+              { index: true, element: <PostsPage /> },
+              { path: 'new', element: <PostCreatePage /> },
+              { path: 'archives', element: <PostsArchivePage /> },
+              { path: 'trash', element: <PostsTrashPage /> },
+              { path: ':postId', element: <PostPreviewPage /> },
+              { path: ':postId/edit', element: <PostEditPage /> },
+              { path: ':postId/seo', element: <PostSeoPage /> },
             ],
           },
 
-          // Gestion du compte & profil
+          // Module Taxonomies : Catégories & Tags (CategoryController, TagController)
+          // Lecture pour tous les membres de l'admin, actions d'écriture gérées en UI/API pour ROLE_MANAGER+
+          {
+            path: '/categories',
+            children: [
+              { index: true, element: <CategoriesPage /> },
+              {
+                element: <ProtectedRoute minRole="ROLE_MANAGER" redirectTo="/categories" />,
+                children: [
+                  { path: 'new', element: <CategoryCreatePage /> },
+                  { path: ':categoryId/edit', element: <CategoryEditPage /> },
+                ],
+              },
+            ],
+          },
+          {
+            path: '/tags',
+            children: [
+              { index: true, element: <TagsPage /> },
+              {
+                element: <ProtectedRoute minRole="ROLE_MANAGER" redirectTo="/tags" />,
+                children: [
+                  { path: 'new', element: <TagCreatePage /> },
+                  { path: ':tagId/edit', element: <TagEditPage /> },
+                ],
+              },
+            ],
+          },
+
+          // Module Modération (CommentModerationController, PostModerationController) — ROLE_MODERATOR+
+          {
+            path: '/moderation',
+            element: <ProtectedRoute minRole="ROLE_MODERATOR" />,
+            children: [
+              {
+                index: true,
+                element: <Navigate to="/moderation/comments" replace />,
+              },
+              { path: 'comments', element: <CommentModerationPage /> },
+              { path: 'posts', element: <PostModerationPage /> },
+            ],
+          },
+
+          // Module Administration & Gestion (UserController, SeoMetadataController) — ROLE_MANAGER+
+          {
+            element: <ProtectedRoute minRole="ROLE_MANAGER" />,
+            children: [
+              {
+                path: '/users',
+                children: [
+                  { index: true, element: <UsersPage /> },
+                  { path: 'new', element: <UserCreatePage /> },
+                  { path: ':userId', element: <UserDetailsPage /> },
+                  { path: ':userId/edit', element: <UserEditPage /> },
+                ],
+              },
+              {
+                path: '/seo',
+                element: <SeoMetadataPage />,
+              },
+            ],
+          },
+
+          // Gestion du compte & profil (AccountController)
           {
             path: '/profile',
             element: <ProfilePage />,
@@ -84,7 +147,7 @@ export const router = createBrowserRouter([
     ],
   },
 
-  // 2. Espace public (Connexion & Inscription)
+  // 2. Espace public : Authentification (AuthController)
   {
     element: <PublicRoute />,
     children: [
@@ -99,6 +162,23 @@ export const router = createBrowserRouter([
             path: '/register',
             element: <RegisterPage />,
           },
+          // Lot 2 : mot de passe oublié & vérification OTP (nécessitent l'API mailer)
+          // {
+          //   path: '/forgot-password',
+          //   element: <ForgotPasswordPage />,
+          // },
+          // {
+          //   path: '/reset-password',
+          //   element: <ResetPasswordPage />,
+          // },
+          // {
+          //   path: '/verify-otp',
+          //   element: <VerifyOtpPage />,
+          // },
+          // {
+          //   path: '/resend-otp',
+          //   element: <ResendOtpPage />,
+          // },
         ],
       },
     ],

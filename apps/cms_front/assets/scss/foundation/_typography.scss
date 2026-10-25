@@ -1,0 +1,45 @@
+@use '../abstracts' as *;
+
+body {
+  font-family: var(--cms-font-sans);
+  font-size: var(--cms-font-size-base);
+  line-height: var(--cms-line-height-base);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  line-height: var(--cms-line-height-tight);
+  overflow-wrap: break-word;
+}
+
+h1 {
+  font-size: var(--cms-font-size-2xl);
+}
+
+h2 {
+  font-size: var(--cms-font-size-xl);
+}
+
+h3 {
+  font-size: var(--cms-font-size-lg);
+}
+
+p {
+  overflow-wrap: break-word;
+}
+
+a {
+  color: var(--cms-color-primary);
+  text-underline-offset: 0.15em;
+
+  &:hover {
+    color: var(--cms-color-primary-hover);
+  }
+}
+
+code,
+pre {
+  font-family: var(--cms-font-mono);
+}

@@ -35,6 +35,9 @@
             "./migrations/.gitignore"
         ]
     },
+    "fagathe-dev/core-php": {
+        "version": "v1.0.19"
+    },
     "fagathe/cms-core": {
         "version": "dev-master"
     },
@@ -54,21 +57,6 @@
             "./phpunit.dist.xml",
             "./tests/bootstrap.php",
             "./bin/phpunit"
-        ]
-    },
-    "symfony/asset-mapper": {
-        "version": "8.1",
-        "recipe": {
-            "repo": "github.com/symfony/recipes",
-            "branch": "main",
-            "version": "6.4",
-            "ref": "c01c47af2ec66a74ec046eccb919cfe27d3464ec"
-        },
-        "files": [
-            "./assets/app.js",
-            "./assets/styles/app.css",
-            "./config/packages/asset_mapper.yaml",
-            "./importmap.php"
         ]
     },
     "symfony/console": {
@@ -236,21 +224,6 @@
             "./config/routes/security.yaml"
         ]
     },
-    "symfony/stimulus-bundle": {
-        "version": "3.6",
-        "recipe": {
-            "repo": "github.com/symfony/recipes",
-            "branch": "main",
-            "version": "3.3",
-            "ref": "30f7461c215766d446f3c990b2b18f08ff51386e"
-        },
-        "files": [
-            "./assets/controllers.json",
-            "./assets/controllers/csrf_protection_controller.js",
-            "./assets/controllers/hello_controller.js",
-            "./assets/stimulus_bootstrap.js"
-        ]
-    },
     "symfony/translation": {
         "version": "8.1",
         "recipe": {
@@ -275,18 +248,6 @@
         "files": [
             "./config/packages/twig.yaml",
             "./templates/base.html.twig"
-        ]
-    },
-    "symfony/ux-turbo": {
-        "version": "3.6",
-        "recipe": {
-            "repo": "github.com/symfony/recipes",
-            "branch": "main",
-            "version": "2.20",
-            "ref": "eaff62fc37864d355804c778309a226ae539831f"
-        },
-        "files": [
-            "./config/packages/ux_turbo.yaml"
         ]
     },
     "symfony/validator": {

@@ -1,0 +1,149 @@
+[
+    {
+        "id": "LOG_20261025053420_6add86cd2b783",
+        "level": "info",
+        "content": {
+            "message": "Article mis à jour",
+            "data": {
+                "post_id": "01a16666-dd12-74a5-a841-39f28c430dec"
+            }
+        },
+        "context": {
+            "ip": "128.79.243.31",
+            "device": "Desktop",
+            "browser": "Edge",
+            "url": "https:\/\/react-cms-api.dev.frederickagathe.fr\/api\/posts\/01a16666-dd12-74a5-a841-39f28c430dec",
+            "method": "PUT",
+            "uid": "superadmin@cms.local",
+            "action": "post.update.success",
+            "origin": "service\/post-service"
+        },
+        "timestamp": "2026-10-25 05:34:20"
+    },
+    {
+        "id": "LOG_20261025063131_6add9433e24a7",
+        "level": "info",
+        "content": {
+            "message": "Article mis à jour",
+            "data": {
+                "post_id": "01a16666-dd12-74a5-a841-39f28c430dec"
+            }
+        },
+        "context": {
+            "ip": "128.79.243.31",
+            "device": "Desktop",
+            "browser": "Edge",
+            "url": "https:\/\/react-cms-api.dev.frederickagathe.fr\/api\/posts\/01a16666-dd12-74a5-a841-39f28c430dec",
+            "method": "PUT",
+            "uid": "superadmin@cms.local",
+            "action": "post.update.success",
+            "origin": "service\/post-service"
+        },
+        "timestamp": "2026-10-25 06:31:31"
+    },
+    {
+        "id": "LOG_20261025063232_6add947040b9e",
+        "level": "info",
+        "content": {
+            "message": "Article mis à jour",
+            "data": {
+                "post_id": "01a16666-dd12-74a5-a841-39f28c430dec"
+            }
+        },
+        "context": {
+            "ip": "128.79.243.31",
+            "device": "Desktop",
+            "browser": "Edge",
+            "url": "https:\/\/react-cms-api.dev.frederickagathe.fr\/api\/posts\/01a16666-dd12-74a5-a841-39f28c430dec",
+            "method": "PUT",
+            "uid": "superadmin@cms.local",
+            "action": "post.update.success",
+            "origin": "service\/post-service"
+        },
+        "timestamp": "2026-10-25 06:32:32"
+    },
+    {
+        "id": "LOG_20261025063245_6add947d8b92e",
+        "level": "info",
+        "content": {
+            "message": "Article mis à jour",
+            "data": {
+                "post_id": "01a16666-dd12-74a5-a841-39f28c430dec"
+            }
+        },
+        "context": {
+            "ip": "128.79.243.31",
+            "device": "Desktop",
+            "browser": "Edge",
+            "url": "https:\/\/react-cms-api.dev.frederickagathe.fr\/api\/posts\/01a16666-dd12-74a5-a841-39f28c430dec",
+            "method": "PUT",
+            "uid": "superadmin@cms.local",
+            "action": "post.update.success",
+            "origin": "service\/post-service"
+        },
+        "timestamp": "2026-10-25 06:32:45"
+    },
+    {
+        "id": "LOG_20261025063248_6add948046056",
+        "level": "info",
+        "content": {
+            "message": "Article mis à jour",
+            "data": {
+                "post_id": "01a16666-dd12-74a5-a841-39f28c430dec"
+            }
+        },
+        "context": {
+            "ip": "128.79.243.31",
+            "device": "Desktop",
+            "browser": "Edge",
+            "url": "https:\/\/react-cms-api.dev.frederickagathe.fr\/api\/posts\/01a16666-dd12-74a5-a841-39f28c430dec",
+            "method": "PUT",
+            "uid": "superadmin@cms.local",
+            "action": "post.update.success",
+            "origin": "service\/post-service"
+        },
+        "timestamp": "2026-10-25 06:32:48"
+    },
+    {
+        "id": "LOG_20261025063253_6add9485ae144",
+        "level": "info",
+        "content": {
+            "message": "Article mis à jour",
+            "data": {
+                "post_id": "01a16666-dd12-74a5-a841-39f28c430dec"
+            }
+        },
+        "context": {
+            "ip": "128.79.243.31",
+            "device": "Desktop",
+            "browser": "Edge",
+            "url": "https:\/\/react-cms-api.dev.frederickagathe.fr\/api\/posts\/01a16666-dd12-74a5-a841-39f28c430dec",
+            "method": "PUT",
+            "uid": "superadmin@cms.local",
+            "action": "post.update.success",
+            "origin": "service\/post-service"
+        },
+        "timestamp": "2026-10-25 06:32:53"
+    },
+    {
+        "id": "LOG_20261025063357_6add94c5c90aa",
+        "level": "info",
+        "content": {
+            "message": "Article mis à jour",
+            "data": {
+                "post_id": "01a16666-dd12-74a5-a841-39f28c430dec"
+            }
+        },
+        "context": {
+            "ip": "128.79.243.31",
+            "device": "Desktop",
+            "browser": "Edge",
+            "url": "https:\/\/react-cms-api.dev.frederickagathe.fr\/api\/posts\/01a16666-dd12-74a5-a841-39f28c430dec",
+            "method": "PUT",
+            "uid": "superadmin@cms.local",
+            "action": "post.update.success",
+            "origin": "service\/post-service"
+        },
+        "timestamp": "2026-10-25 06:33:57"
+    }
+]

@@ -1,0 +1,45 @@
+// ==========================================================================
+// System Tokens (niveau 2) : variables CSS sémantiques globales.
+// Les composants n'utilisent que ces variables (--cms-*), jamais les primitives.
+// ==========================================================================
+
+@use 'sass:meta';
+@use '../abstracts' as *;
+
+:root {
+  // Couleurs
+  --cms-color-primary: #{palette($palette-primary, 600)};
+  --cms-color-primary-hover: #{palette($palette-primary, 700)};
+  --cms-color-on-primary: #{palette($palette-neutral, 0)};
+  --cms-color-text: #{palette($palette-neutral, 900)};
+  --cms-color-text-muted: #{palette($palette-neutral, 600)};
+  --cms-color-border: #{palette($palette-neutral, 200)};
+  --cms-surface: #{palette($palette-neutral, 0)};
+  --cms-surface-container: #{palette($palette-neutral, 50)};
+
+  // Espacements : --cms-space-{n} = n × 4px
+  @each $step in $space-scale {
+    --cms-space-#{$step}: #{$step * $space-unit};
+  }
+
+  // Typographie
+  // meta.inspect conserve les guillemets des noms de polices (l'interpolation seule les retire)
+  --cms-font-sans: #{meta.inspect($font-family-sans)};
+  --cms-font-mono: #{meta.inspect($font-family-mono)};
+  --cms-font-size-sm: 0.875rem;
+  --cms-font-size-base: 1rem;
+  --cms-font-size-lg: 1.125rem;
+  --cms-font-size-xl: 1.5rem;
+  --cms-font-size-2xl: 2rem;
+  --cms-line-height-base: 1.6;
+  --cms-line-height-tight: 1.25;
+
+  // Formes
+  --cms-radius-sm: 0.375rem;
+  --cms-radius-md: 0.5rem;
+  --cms-radius-lg: 0.75rem;
+
+  // Mise en page
+  --cms-container-max-width: 72rem;
+  --cms-content-max-width: 45rem;
+}

@@ -1,12 +1,11 @@
-import type { DueDateEnum } from '@/types/todo.types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { dueDateEnumToIso, isoToDueDateCategory } from './dueDate.resolver';
+import { DueDateCategory, dueDateEnumToIso, isoToDueDateCategory } from './dueDate.resolver';
 
 // Mardi 20 octobre 2026, 10h00 (heure locale) : les assertions utilisent des champs
 // locaux (getDate, getHours…) pour rester indépendantes du fuseau horaire de la machine.
 const NOW = new Date(2026, 9, 20, 10, 0, 0);
 
-const ENUM_VALUES: DueDateEnum[] = ['today', 'tomorrow', 'this_week', 'later'];
+const ENUM_VALUES: DueDateCategory[] = ['today', 'tomorrow', 'this_week', 'later'];
 
 /** Date locale -> chaîne ISO, comme la renverrait l'API */
 const iso = (year: number, month: number, day: number, hours = 12, minutes = 0): string =>

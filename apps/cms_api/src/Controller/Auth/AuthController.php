@@ -18,6 +18,19 @@ final class AuthController extends AbstractController
         private readonly AuthService $service,
     ) {}
 
+    #[Route('/login', name: 'login', methods: ['POST'])]
+    public function login(Request $request): JsonResponse
+    {
+        echo json_encode([
+            'message' => 'Test message !',
+        ]);
+        http_response_code(Response::HTTP_PARTIAL_CONTENT);
+        die;
+        $res = $this->service->login($request);
+
+        return $this->json($res->data, $res->status, $res->headers, $res->context);
+    }
+
     #[Route('/register', name: 'register', methods: ['POST'])]
     public function register(Request $request): JsonResponse
     {
@@ -58,18 +71,9 @@ final class AuthController extends AbstractController
         return $this->json($res->data, $res->status, $res->headers, $res->context);
     }
 
-    #[Route('/login', name: 'login', methods: ['POST'])]
-    public function login(): JsonResponse
-    {
-        // Intercepté en amont par le firewall "json_login" de LexikJWT
-        return $this->json(['message' => 'Missing credentials'], Response::HTTP_UNAUTHORIZED);
-    }
-
     #[Route('/logout', name: 'logout', methods: ['POST'])]
     public function logout(): JsonResponse
     {
-        // En JWT stateless, la suppression du token est gérée côté client (store React),
-        // mais cet endpoint permet un retour HTTP standardisé.
         return $this->json(['message' => 'Déconnexion réussie.'], Response::HTTP_OK);
     }
 }

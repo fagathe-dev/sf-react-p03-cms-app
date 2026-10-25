@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Fagathe\CmsCore\Service;
 
-use Doctrine\ORM\EntityManagerInterface;
 use Fagathe\CmsCore\Entity\User;
 use Fagathe\CmsCore\Enum\Auth\UserRequestTypeEnum;
 use Fagathe\CmsCore\Enum\Auth\UserRole;
@@ -29,22 +28,31 @@ final class AuthService
 
     public function __construct(
         private readonly UserRepository $userRepository,
-        private readonly EntityManagerInterface $em,
         private readonly ValidatorInterface $validator,
         private readonly SerializerInterface $serializer,
         private readonly UserPasswordHasherInterface $hasher,
         private readonly UserRequestService $userRequestService,
-        private readonly ?JWTTokenManagerInterface $jwtManager = null,
+        private readonly SecretDecoder $secretDecoder,
+        private readonly JWTTokenManagerInterface $jwtManager,
     ) {}
 
+    /**
+     * Inscription d'un nouvel utilisateur et envoi d'OTP
+     */
     public function register(Request $request): object
     {
         $now = $this->now();
 
+        // Le mot de passe arrive en base64 : on le décode AVANT la désérialisation et la validation
+        $body = $this->secretDecoder->decodeJsonBody($request->getContent(), ['password']);
+        if ($body === null) {
+            return $this->sendJson(['message' => 'Format de données invalide.'], Response::HTTP_BAD_REQUEST);
+        }
+
         try {
             /** @var User $user */
             $user = $this->serializer->deserialize(
-                $request->getContent(),
+                $body,
                 User::class,
                 'json',
                 [
@@ -56,7 +64,6 @@ final class AuthService
                         'updatedAt',
                         'tags',
                         'posts',
-                        'comments',
                         'emailVerifiedAt',
                         'isVerified',
                     ],
@@ -66,6 +73,7 @@ final class AuthService
             return $this->sendJson(['message' => 'Format de données JSON invalide.'], Response::HTTP_BAD_REQUEST);
         }
 
+        // Validation des contraintes de l'entité (mot de passe décodé en clair ici)
         $violations = $this->validator->validate($user);
         if (count($violations) > 0) {
             return $this->sendViolations($violations);
@@ -77,34 +85,13 @@ final class AuthService
             ->setCreatedAt($now)
             ->setIsVerified(false);
 
-        try {
-            $this->em->persist($user);
-            $this->em->flush();
-
-            $otpRequest = $this->userRequestService->createRequest(
-                $user,
-                UserRequestTypeEnum::OtpRegister,
-                ttlMinutes: 15,
-                isOtp: true
-            );
-
-            // TODO : Expédition e-mail avec $otpRequest?->getCode()
-
-            return $this->sendJson(
-                [
-                    'user'    => $user,
-                    'message' => 'Compte créé avec succès. Un code de confirmation vous a été envoyé.',
-                ],
-                Response::HTTP_CREATED,
-                context: ['groups' => ['user.read']]
-            );
-        } catch (Throwable $e) {
+        if (!$this->userRepository->save($user, flush: true, isCreation: true)) {
             $this->generateLog(
                 LoggerLevelEnum::Critical,
                 [
-                    'message'   => 'Erreur critique lors de l\'inscription',
-                    'data'      => ['user' => $user->getUsername()],
-                    'exception' => $e->getMessage(),
+                    'message'    => 'Erreur critique lors de l\'inscription',
+                    'user'       => $user->getUsername(),
+                    'user_agent' => $this->getUserAgent(),
                 ],
                 ['action' => 'user.register.critical_error']
             );
@@ -114,8 +101,30 @@ final class AuthService
                 Response::HTTP_INTERNAL_SERVER_ERROR
             );
         }
+
+        // Création de l'OTP de validation via le service générique
+        $otpRequest = $this->userRequestService->createRequest(
+            $user,
+            UserRequestTypeEnum::OtpRegister,
+            ttlMinutes: 15,
+            isOtp: true
+        );
+
+        // TODO : Expédition e-mail avec $otpRequest?->getCode()
+
+        return $this->sendJson(
+            [
+                'user'    => $user,
+                'message' => 'Compte créé avec succès. Un code de confirmation vous a été envoyé.',
+            ],
+            Response::HTTP_CREATED,
+            context: ['groups' => ['user.read']]
+        );
     }
 
+    /**
+     * Connexion : le mot de passe est reçu en base64, décodé, puis vérifié contre le hash en base
+     */
     public function login(Request $request): object
     {
         $data = json_decode($request->getContent(), true);
@@ -123,8 +132,14 @@ final class AuthService
             return $this->sendJson(['message' => 'Format de données JSON invalide.'], Response::HTTP_BAD_REQUEST);
         }
 
+
         $identifier = trim((string) ($data['username'] ?? $data['email'] ?? ''));
-        $password = (string) ($data['password'] ?? '');
+        $password = $this->secretDecoder->decode((string) ($data['password'] ?? ''));
+
+        if ($password === null) {
+            return $this->sendJson(['message' => 'Format de données invalide.'], Response::HTTP_BAD_REQUEST);
+        }
+
 
         if ($identifier === '' || $password === '') {
             return $this->sendJson(
@@ -137,11 +152,13 @@ final class AuthService
             ?? $this->userRepository->findOneBy(['email' => $identifier]);
 
         if (!$user instanceof User) {
+            // Hash factice pour lisser le temps de réponse (anti-énumération d'utilisateurs)
             $this->hasher->hashPassword(new User(), $password);
 
             return $this->sendJson(['message' => 'Identifiants invalides.'], Response::HTTP_UNAUTHORIZED);
         }
 
+        // $password est ici le mot de passe DÉCODÉ : c'est lui qui est comparé au hash
         if (!$this->hasher->isPasswordValid($user, $password)) {
             return $this->sendJson(['message' => 'Identifiants invalides.'], Response::HTTP_UNAUTHORIZED);
         }
@@ -153,27 +170,19 @@ final class AuthService
             );
         }
 
-        $payload = ['user' => $user];
-        if ($this->jwtManager !== null) {
-            $payload['token'] = $this->jwtManager->create($user);
-        }
-
-        $this->generateLog(
-            LoggerLevelEnum::Info,
-            [
-                'message' => 'Connexion utilisateur réussie',
-                'data'    => ['user_id' => (string) $user->getId()],
-            ],
-            ['action' => 'user.login.success', 'uid' => (string) $user->getId()]
-        );
-
         return $this->sendJson(
-            $payload,
+            [
+                'token' => $this->jwtManager->create($user),
+                'user'  => $user,
+            ],
             Response::HTTP_OK,
             context: ['groups' => ['user.read']]
         );
     }
 
+    /**
+     * Vérification de l'adresse e-mail par code OTP
+     */
     public function verifyOtp(Request $request): object
     {
         $data = json_decode($request->getContent(), true) ?? [];
@@ -193,6 +202,7 @@ final class AuthService
         $user->setIsVerified(true);
         $user->setEmailVerifiedAt($this->now());
 
+        $this->userRepository->save($user, flush: false, isCreation: false);
         $this->userRequestService->consume($userRequest);
 
         return $this->sendJson([
@@ -200,6 +210,9 @@ final class AuthService
         ]);
     }
 
+    /**
+     * Renvoi d'un code OTP de vérification
+     */
     public function resendOtp(Request $request): object
     {
         $data = json_decode($request->getContent(), true) ?? [];
@@ -227,6 +240,9 @@ final class AuthService
         ]);
     }
 
+    /**
+     * Demande de réinitialisation de mot de passe (génération d'un token sécurisé)
+     */
     public function forgotPassword(Request $request): object
     {
         $data = json_decode($request->getContent(), true) ?? [];
@@ -249,16 +265,24 @@ final class AuthService
             // TODO : Envoyer l'e-mail avec le lien contenant $userRequest?->getToken()
         }
 
+        // Réponse constante pour empêcher l'énumération d'utilisateurs
         return $this->sendJson([
             'message' => 'Si cette adresse existe, un lien de réinitialisation vous a été envoyé.',
         ]);
     }
 
+    /**
+     * Réinitialisation effective du mot de passe avec le token
+     */
     public function resetPassword(Request $request): object
     {
         $data = json_decode($request->getContent(), true) ?? [];
         $token = trim((string) ($data['token'] ?? ''));
-        $password = (string) ($data['password'] ?? '');
+        $password = $this->secretDecoder->decode((string) ($data['password'] ?? ''));
+
+        if ($password === null) {
+            return $this->sendJson(['message' => 'Format de données invalide.'], Response::HTTP_BAD_REQUEST);
+        }
 
         if ($token === '' || $password === '') {
             return $this->sendJson(
@@ -285,8 +309,8 @@ final class AuthService
         }
 
         $user->setPassword($this->hasher->hashPassword($user, $password));
-        $user->setUpdatedAt($this->now());
 
+        $this->userRepository->save($user, flush: false, isCreation: false);
         $this->userRequestService->consume($userRequest);
 
         return $this->sendJson(['message' => 'Votre mot de passe a été réinitialisé avec succès.']);

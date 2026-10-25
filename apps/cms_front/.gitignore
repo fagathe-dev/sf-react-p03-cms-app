@@ -8,10 +8,11 @@
 /vendor/
 ###< symfony/framework-bundle ###
 
-###> symfony/asset-mapper ###
-/assets/vendor/
-###< symfony/asset-mapper ###
-
+###> assets (scripts/compile-*.js) ###
+/node_modules/
+/public/css/
+/public/js/
+###< assets ###
 ###> phpunit ###
 /phpunit.xml
 .phpunit.cache/

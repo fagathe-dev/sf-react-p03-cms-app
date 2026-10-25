@@ -1,0 +1,14 @@
+// ==========================================================================
+// Site public du CMS — point d'entrée (compilé vers public/css/app.css)
+// --------------------------------------------------------------------------
+// abstracts/   outils sans sortie CSS (primitives, fonctions, mixins)
+// foundation/  System Tokens, reset, typographie
+// layout/      structure de page (container…)
+// components/  blocs UI autonomes
+// utilities/   ajustements ponctuels, en dernier pour primer
+// ==========================================================================
+
+@use 'foundation';
+@use 'layout';
+@use 'components';
+@use 'utilities';

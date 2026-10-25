@@ -1,0 +1,18 @@
+@use '../abstracts' as *;
+
+// Conteneur de page centré, avec gouttière latérale
+.container {
+  width: 100%;
+  max-width: var(--cms-container-max-width);
+  margin-inline: auto;
+  padding-inline: space(4);
+
+  @include media-up(md) {
+    padding-inline: space(8);
+  }
+}
+
+// Largeur de lecture confortable (corps d'article)
+.container-content {
+  max-width: var(--cms-content-max-width);
+}

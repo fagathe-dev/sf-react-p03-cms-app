@@ -38,41 +38,8 @@ final class AccountService
         private readonly SerializerInterface $serializer,
         private readonly UserPasswordHasherInterface $hasher,
         private readonly UploaderService $uploader,
-        private readonly ?string $defaultUri = null,
+        private readonly FilePathResolver $fileResolver,
     ) {}
-
-    public function getBaseUri(): string
-    {
-        if (!empty($this->defaultUri)) {
-            return rtrim($this->defaultUri, '/');
-        }
-
-        return rtrim($this->getOrigin(), '/');
-    }
-
-    public function formatFileUri(?string $path): ?string
-    {
-        if (!$path) {
-            return null;
-        }
-
-        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
-            return $path;
-        }
-
-        return sprintf('%s/%s', $this->getBaseUri(), ltrim($path, '/'));
-    }
-
-    private function extractRelativePath(?string $urlOrPath): ?string
-    {
-        if (!$urlOrPath) {
-            return null;
-        }
-
-        $parsed = parse_url($urlOrPath, PHP_URL_PATH);
-
-        return ltrim($parsed ?: $urlOrPath, '/');
-    }
 
     public function getProfile(): object
     {
@@ -221,14 +188,15 @@ final class AccountService
         }
 
         try {
-            $oldPath = $this->extractRelativePath($user->getAvatar());
+            $subDir = self::avatarDirectory($user);
 
+            // Ancien avatar supprimé par l'uploader une fois le nouveau déplacé (ignoré s'il est externe, ex. pravatar)
             $uploadResult = $this->uploader
-                ->setUploadDirectory('avatars/' . (string) $user->getId())
-                ->upload($dto->file, $oldPath);
+                ->setUploadDirectory($subDir)
+                ->upload($dto->file, $this->fileResolver->extractUploadedPath($user->getAvatar(), $subDir));
 
-            $fullAvatarUrl = $this->formatFileUri($uploadResult->relativePath);
-            $user->setAvatar($fullAvatarUrl);
+            // Chemin relatif en BDD, l'URL absolue est résolue à la sérialisation (FileUrlNormalizer)
+            $user->setAvatar($uploadResult->relativePath);
             $user->setUpdatedAt($this->now());
 
             $this->userRepository->save($user, flush: true, isCreation: false);
@@ -262,8 +230,9 @@ final class AccountService
         }
 
         try {
-            if ($user->getAvatar()) {
-                $this->uploader->delete((string) $this->extractRelativePath($user->getAvatar()));
+            $avatarPath = $this->fileResolver->extractUploadedPath($user->getAvatar(), self::avatarDirectory($user));
+            if ($avatarPath) {
+                $this->uploader->delete($avatarPath);
             }
 
             $this->userRepository->remove($user, true);
@@ -292,5 +261,10 @@ final class AccountService
         $user = $this->security->getUser();
 
         return $user instanceof User ? $user : null;
+    }
+
+    private static function avatarDirectory(User $user): string
+    {
+        return 'avatars/' . (string) $user->getId();
     }
 }

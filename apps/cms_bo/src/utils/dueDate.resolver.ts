@@ -1,20 +1,17 @@
 // src/utils/dueDate.resolver.ts
-import { DueDateEnum } from '@/types/todo.types';
 import { DateCalculator, ensureDate } from 'core-ts';
 
-export type DueDateCategory = DueDateEnum | 'overdue' | 'none';
+export type DueDateCategory = 'today' | 'tomorrow' | 'this_week' | 'later' | 'overdue' | 'none' | null | undefined;
 
 /**
  * FORMULAIRE -> API
  * Convertit le choix du bouton en chaîne ISO 8601 calée à 23:59:59
  */
-export const dueDateEnumToIso = (
-  enumValue: DueDateEnum | null | undefined
-): string | null => {
+export const dueDateEnumToIso = (enumValue: DueDateCategory): string | null => {
   if (!enumValue) return null;
 
   const now = new Date();
-  let target: Date;
+  let target: Date = new Date();
 
   switch (enumValue) {
     case 'today':
@@ -48,9 +45,7 @@ export const dueDateEnumToIso = (
  * API -> AFFICHAGE (TasksPage / TaskEditModal)
  * Détermine la section ou le bouton actif à partir de la date reçue
  */
-export const isoToDueDateCategory = (
-  isoDate: string | null | undefined
-): DueDateCategory => {
+export const isoToDueDateCategory = (isoDate: string | null | undefined): DueDateCategory => {
   if (!isoDate) return 'none';
 
   let target: Date;
@@ -67,16 +62,8 @@ export const isoToDueDateCategory = (
 
   // Normalisation au début de journée pour comparer les écarts calendaires
   const now = new Date();
-  const todayMidnight = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate()
-  ).getTime();
-  const targetMidnight = new Date(
-    target.getFullYear(),
-    target.getMonth(),
-    target.getDate()
-  ).getTime();
+  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const targetMidnight = new Date(target.getFullYear(), target.getMonth(), target.getDate()).getTime();
 
   const oneDayMs = 24 * 60 * 60 * 1000;
   const diffDays = Math.round((targetMidnight - todayMidnight) / oneDayMs);

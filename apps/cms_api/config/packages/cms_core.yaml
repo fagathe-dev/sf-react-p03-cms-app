@@ -1,0 +1,3 @@
+cms_core:
+    # URL de base des fichiers uploadés (avatars, miniatures, médias d'articles)
+    default_uri: '%env(DEFAULT_URI)%'

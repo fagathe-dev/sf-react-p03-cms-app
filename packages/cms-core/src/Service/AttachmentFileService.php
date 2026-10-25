@@ -12,18 +12,18 @@ use Fagathe\CmsCore\Entity\User;
 use Fagathe\CorePhp\Enum\LoggerLevelEnum;
 use Fagathe\CorePhp\File\FileTrait;
 use Fagathe\CorePhp\File\MimeType;
-use Fagathe\CorePhp\Http\RequestTrait;
 use Fagathe\CorePhp\Trait\DatetimeTrait;
 use Fagathe\CorePhp\Trait\LoggerTrait;
 use Fagathe\CorePhp\Uploader\FileUploadException;
 use Fagathe\CorePhp\Uploader\UploaderService;
 use Fagathe\CorePhp\Uploader\UploaderValidationService;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Throwable;
 
 final class AttachmentFileService
 {
-    use LoggerTrait, DatetimeTrait, FileTrait, RequestTrait;
+    use LoggerTrait, DatetimeTrait, FileTrait;
 
     private const MAX_SIZE = 50 * 1024 * 1024; // 50 Mo
     private const MAX_THUMBNAIL_SIZE = 10 * 1024 * 1024; // 10 Mo
@@ -31,7 +31,8 @@ final class AttachmentFileService
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly UploaderService $uploader,
-        private readonly ?string $defaultUri = null,
+        private readonly FilePathResolver $fileResolver,
+        private readonly Security $security,
     ) {}
 
     /**
@@ -40,25 +41,22 @@ final class AttachmentFileService
     public function upload(UploadedFile $file, Post $post, User $user, ?string $alt = null): PostMedia
     {
         $allowedMimes = [...MimeType::IMAGE_MIMES, ...MimeType::VIDEO_MIMES, ...MimeType::AUDIO_MIMES];
-        $subDir = 'posts/' . (string) $post->getId();
 
-        $validator = new UploaderValidationService();
-        $validator->setAllowedMimeTypes($allowedMimes)->setMaxSize(self::MAX_SIZE);
-
-        $result = $validator->validate($file);
-        if ($result !== true && is_array($result)) {
+        // Instance dédiée : le service injecté est partagé, ses setters modifieraient les règles du reste de la requête
+        $result = (new UploaderValidationService($allowedMimes, self::MAX_SIZE))->validate($file);
+        if (!is_bool($result) && $result !== true) {
             throw new FileUploadException(implode(' ', $result));
         }
 
         $uploadResult = $this->uploader
-            ->setUploadDirectory($subDir)
+            ->setUploadDirectory(self::mediaDirectory($post))
             ->upload($file);
 
         $media = (new PostMedia())
             ->setPost($post)
             ->setAlt($alt)
             ->setOriginalName($uploadResult->originalName)
-            ->setFilePath((string) $this->formatFileUri($uploadResult->relativePath))
+            ->setFilePath($uploadResult->relativePath)
             ->setMimeType($uploadResult->mimeType)
             ->setExtension($uploadResult->extension)
             ->setSize($uploadResult->size)
@@ -86,41 +84,33 @@ final class AttachmentFileService
     }
 
     /**
-     * Upload et remplace la miniature (thumbnail) d'un article.
+     * Upload et remplace la miniature (thumbnail) d'un article. Retourne son URL absolue.
      *
      * @throws FileUploadException
      */
     public function uploadPostThumbnail(UploadedFile $file, Post $post): string
     {
-        $validator = new UploaderValidationService();
-        $validator->setAllowedMimeTypes(MimeType::IMAGE_MIMES)->setMaxSize(self::MAX_THUMBNAIL_SIZE);
-
-        $result = $validator->validate($file);
-        if ($result !== true && is_array($result)) {
+        $result = (new UploaderValidationService(MimeType::IMAGE_MIMES, self::MAX_THUMBNAIL_SIZE))->validate($file);
+        if (!is_bool($result) && $result !== true) {
             throw new FileUploadException(implode(' ', $result));
         }
 
-        if ($post->getThumbnail()) {
-            $this->deleteRawPath($post->getThumbnail());
-        }
-
-        $subDir = 'posts/' . (string) $post->getId() . '/thumbnail';
+        // L'ancienne miniature n'est supprimée par l'uploader qu'une fois la nouvelle déplacée
+        $subDir = self::thumbnailDirectory($post);
         $uploadResult = $this->uploader
             ->setUploadDirectory($subDir)
-            ->upload($file);
+            ->upload($file, $this->fileResolver->extractUploadedPath($post->getThumbnail(), $subDir));
 
-        $uri = (string) $this->formatFileUri($uploadResult->relativePath);
-        $post->setThumbnail($uri)->setUpdatedAt($this->now());
+        $post->setThumbnail($uploadResult->relativePath)->setUpdatedAt($this->now());
 
-        return $uri;
+        return (string) $this->fileResolver->resolveUrl($uploadResult->relativePath);
     }
 
     public function delete(AbstractFile $file, bool $flush = true): bool
     {
         try {
-            if ($file->getFilePath()) {
-                $this->deleteRawPath($file->getFilePath());
-            }
+            $subDir = $file instanceof PostMedia ? self::mediaDirectory($file->getPost()) : '';
+            $this->deleteRawPath($file->getFilePath(), $subDir);
 
             $this->em->remove($file);
             if ($flush) {
@@ -155,7 +145,7 @@ final class AttachmentFileService
     public function deleteByPost(Post $post): void
     {
         if ($post->getThumbnail()) {
-            $this->deleteRawPath($post->getThumbnail());
+            $this->deleteRawPath($post->getThumbnail(), self::thumbnailDirectory($post));
             $post->setThumbnail(null);
         }
 
@@ -166,35 +156,24 @@ final class AttachmentFileService
         $this->em->flush();
     }
 
-    public function deleteRawPath(?string $urlOrPath): void
+    /**
+     * Supprime un fichier uploadé à partir de son URL ou de son chemin, s'il se trouve dans {uploadDir}/{subDirectory}/.
+     */
+    public function deleteRawPath(?string $urlOrPath, string $subDirectory = ''): void
     {
-        $relativePath = $this->extractRelativePath($urlOrPath);
+        $relativePath = $this->fileResolver->extractUploadedPath($urlOrPath, $subDirectory);
         if ($relativePath) {
             $this->uploader->delete($relativePath);
         }
     }
 
-    public function formatFileUri(?string $path): ?string
+    private static function mediaDirectory(?Post $post): string
     {
-        if (!$path) {
-            return null;
-        }
-        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
-            return $path;
-        }
-
-        $base = !empty($this->defaultUri) ? rtrim($this->defaultUri, '/') : rtrim($this->getOrigin(), '/');
-
-        return sprintf('%s/%s', $base, ltrim($path, '/'));
+        return 'posts/' . (string) $post?->getId();
     }
 
-    private function extractRelativePath(?string $urlOrPath): ?string
+    private static function thumbnailDirectory(Post $post): string
     {
-        if (!$urlOrPath) {
-            return null;
-        }
-        $parsed = parse_url($urlOrPath, PHP_URL_PATH);
-
-        return ltrim($parsed ?: $urlOrPath, '/');
+        return self::mediaDirectory($post) . '/thumbnail';
     }
 }

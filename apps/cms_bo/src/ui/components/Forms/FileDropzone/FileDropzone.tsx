@@ -137,7 +137,13 @@ export const FileDropzone = ({
           accept={accept}
           multiple={multiple}
           disabled={disabled}
-          onChange={(e) => handleFiles(e.target.files)}
+          // Le clic de l'input remonterait à DropArea, qui relancerait inputRef.click()
+          onClick={(e) => e.stopPropagation()}
+          onChange={(e) => {
+            handleFiles(e.target.files);
+            // Permet de resélectionner le même fichier (sinon aucun événement change)
+            e.target.value = '';
+          }}
         />
         <Icon name="cloud-upload-outline" size={32} />
         <MainText>

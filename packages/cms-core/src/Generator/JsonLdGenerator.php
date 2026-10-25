@@ -8,6 +8,7 @@ use Fagathe\CmsCore\Contract\ArticleSeoInterface;
 use Fagathe\CmsCore\Contract\SeoMetadataInterface;
 use Fagathe\CmsCore\Contract\TaxonomySeoInterface;
 use Fagathe\CmsCore\Enum\Seo\SchemaType;
+use Fagathe\CmsCore\Service\FilePathResolver;
 
 class JsonLdGenerator
 {
@@ -18,6 +19,8 @@ class JsonLdGenerator
         ?string $siteUrl = null,
         ?string $siteName = null,
         private readonly string $logoPath = '/assets/images/logo.png',
+        // Miniature servie par l'API (chemin relatif en BDD) : sans resolver, elle est résolue sur $siteUrl
+        private readonly ?FilePathResolver $fileResolver = null,
     ) {
         $this->siteUrl = $siteUrl ?? ($_ENV['APP_SITE_URL'] ?? 'http://localhost');
         $this->siteName = $siteName ?? ($_ENV['APP_SITE_NAME'] ?? 'Mon Blog Tech');
@@ -34,7 +37,8 @@ class JsonLdGenerator
         ?SeoMetadataInterface $seo = null,
         SchemaType $type = SchemaType::TECH_ARTICLE
     ): array {
-        $imagePath = $seo?->getOgImage() ?? $article->getThumbnail();
+        $thumbnail = $this->fileResolver?->resolveUrl($article->getThumbnail()) ?? $article->getThumbnail();
+        $imagePath = $seo?->getOgImage() ?? $thumbnail;
 
         $schema = [
             '@context' => 'https://schema.org',

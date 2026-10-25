@@ -2,14 +2,17 @@ import {
   AuthResponse,
   ChangeEmailPayload,
   ChangePasswordPayload,
+  ForgotPasswordPayload,
   LoginPayload,
+  MessageResponse,
   RegisterPayload,
   RegisterResponse,
-  SetJournalPasscodePayload,
-  SetJournalPasscodeResponse,
+  ResendOtpPayload,
+  ResetPasswordPayload,
   UpdateProfilePayload,
   User,
-} from '@/types/auth.types';
+  VerifyOtpPayload,
+} from '@/types';
 import { encodeSecret } from '@/utils';
 import { fetchAPI } from './fetchAPI';
 
@@ -54,6 +57,58 @@ export const fetchLogin = async (credentials: LoginPayload): Promise<AuthRespons
 
   if (!res.ok) {
     throw new Error(extractErrorMessage(res.data, 'Identifiants invalides'));
+  }
+
+  return res.data;
+};
+
+export const fetchVerifyOtp = async (payload: VerifyOtpPayload): Promise<MessageResponse> => {
+  const res = await fetchAPI<MessageResponse>(`${AUTH_BASE_URL}/verify-otp`, {
+    method: 'POST',
+    body: payload,
+  });
+
+  if (!res.ok) {
+    throw new Error(extractErrorMessage(res.data, 'Code de vérification invalide'));
+  }
+
+  return res.data;
+};
+
+export const fetchResendOtp = async (payload: ResendOtpPayload): Promise<MessageResponse> => {
+  const res = await fetchAPI<MessageResponse>(`${AUTH_BASE_URL}/resend-otp`, {
+    method: 'POST',
+    body: payload,
+  });
+
+  if (!res.ok) {
+    throw new Error(extractErrorMessage(res.data, "Erreur lors de l'envoi du code"));
+  }
+
+  return res.data;
+};
+
+export const fetchForgotPassword = async (payload: ForgotPasswordPayload): Promise<MessageResponse> => {
+  const res = await fetchAPI<MessageResponse>(`${AUTH_BASE_URL}/forgot-password`, {
+    method: 'POST',
+    body: payload,
+  });
+
+  if (!res.ok) {
+    throw new Error(extractErrorMessage(res.data, 'Erreur lors de la demande de réinitialisation'));
+  }
+
+  return res.data;
+};
+
+export const fetchResetPassword = async (payload: ResetPasswordPayload): Promise<MessageResponse> => {
+  const res = await fetchAPI<MessageResponse>(`${AUTH_BASE_URL}/reset-password`, {
+    method: 'POST',
+    body: { ...payload, password: encodeSecret(payload.password) },
+  });
+
+  if (!res.ok) {
+    throw new Error(extractErrorMessage(res.data, 'Erreur lors de la réinitialisation du mot de passe'));
   }
 
   return res.data;
@@ -141,22 +196,4 @@ export const deleteAccount = async (): Promise<void> => {
   if (!res.ok) {
     throw new Error(extractErrorMessage(res.data, 'Erreur lors de la suppression du compte'));
   }
-};
-
-export const updateJournalPasscode = async (
-  payload: SetJournalPasscodePayload
-): Promise<SetJournalPasscodeResponse> => {
-  const res = await fetchAPI<SetJournalPasscodeResponse>(`${ACCOUNT_BASE_URL}/journal-passcode`, {
-    method: 'PUT',
-    body: {
-      passcode: encodeSecret(payload.passcode),
-      ...(payload.currentPasscode ? { currentPasscode: encodeSecret(payload.currentPasscode) } : {}),
-    },
-  });
-
-  if (!res.ok) {
-    throw new Error(extractErrorMessage(res.data, 'Erreur lors de la configuration du code secret'));
-  }
-
-  return res.data;
 };

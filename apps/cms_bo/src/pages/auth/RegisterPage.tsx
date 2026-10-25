@@ -1,5 +1,4 @@
-import { fetchLogin, fetchRegister } from '@/services/auth.api';
-import { useAuthStore } from '@/stores/auth.store';
+import { fetchRegister } from '@/services/auth.api';
 import { Button } from '@/ui/components/Base/Button';
 import { Card } from '@/ui/components/Content/Card';
 import { Alert } from '@/ui/components/Feedback/Alert';
@@ -39,7 +38,6 @@ type RegisterFormData = z.infer<typeof registerSchema>;
 
 export const RegisterPage = () => {
   const [apiError, setApiError] = useState<string | null>(null);
-  const setAuth = useAuthStore((state) => state.setAuth);
   const navigate = useNavigate();
 
   const {
@@ -59,21 +57,20 @@ export const RegisterPage = () => {
   const onSubmit = async (data: RegisterFormData) => {
     setApiError(null);
     try {
-      // 1. Inscription sur l'API Symfony
-      await fetchRegister({
+      // 1. Inscription sur l'API Symfony (le compte est créé non vérifié)
+      const { message } = await fetchRegister({
         email: data.email,
         username: data.username,
         password: data.password,
       });
 
-      // 2. Connexion immédiate avec l'adresse e-mail
-      const loginResponse = await fetchLogin({
-        username: data.email,
-        password: data.password,
-      });
+      // 2. Redirection vers la connexion
+      navigate('/login', { state: { successMessage: message } });
 
-      setAuth(loginResponse.token, loginResponse.user);
-      navigate('/');
+      // Lot 2 : mailer — redirection vers la saisie du code OTP reçu par e-mail
+      // navigate(`/verify-otp?email=${encodeURIComponent(data.email)}`, {
+      //   state: { successMessage: message },
+      // });
     } catch (err) {
       setApiError(
         err instanceof Error ? err.message : "Erreur lors de l'inscription"

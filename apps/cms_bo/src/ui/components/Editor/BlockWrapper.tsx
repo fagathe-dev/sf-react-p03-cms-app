@@ -1,4 +1,3 @@
-// frontend/src/ui/components/Editor/BlockWrapper.tsx
 import { Badge } from '@/ui/components/Base/Badge';
 import { Icon } from '@/ui/components/Base/Icon';
 import { IconButton } from '@/ui/components/Base/IconButton';
@@ -8,6 +7,8 @@ import styled from 'styled-components';
 
 export interface BlockWrapperProps extends BaseComponentProps {
   blockType: string;
+  /** Libellé lisible du type (ex. « Citation ») ; à défaut, `blockType` en majuscules */
+  blockLabel?: string;
   position: number;
   isFirst?: boolean;
   isLast?: boolean;
@@ -15,10 +16,15 @@ export interface BlockWrapperProps extends BaseComponentProps {
   onMoveDown?: () => void;
   onDelete?: () => void;
   onOpenSettings?: () => void;
+  /** Attributs et écouteurs de la poignée (ex. `{ ...attributes, ...listeners }` de `useSortable`) ; la poignée n'est affichée que s'ils sont fournis */
   dragHandleProps?: React.HTMLAttributes<HTMLSpanElement>;
+  /** Ref de la poignée (ex. `setActivatorNodeRef` de `useSortable`) : rend le focus à la poignée après un déplacement au clavier */
+  dragHandleRef?: React.Ref<HTMLSpanElement>;
+  /** Bloc en cours de déplacement : mise en avant visuelle */
+  isDragging?: boolean;
 }
 
-const Shell = styled.div`
+const Shell = styled.div<{ $isDragging?: boolean }>`
   position: relative;
   background-color: ${({ theme }) => theme.colors.background.surface};
   border: 1px solid ${({ theme }) => theme.colors.border.default};
@@ -32,13 +38,21 @@ const Shell = styled.div`
     border-color: ${({ theme }) => theme.colors.primary.base};
     box-shadow: ${({ theme }) => theme.shadows.sm};
   }
+
+  ${({ $isDragging, theme }) =>
+    $isDragging &&
+    `
+    border-color: ${theme.colors.primary.base};
+    box-shadow: ${theme.shadows.lg};
+    opacity: 0.95;
+  `}
 `;
 
 const Toolbar = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: ${({ theme }) => `${theme.spacing[1.5]}${theme.spacing[3]}`};
+  padding: ${({ theme }) => `${theme.spacing[1.5]} ${theme.spacing[3]}`};
   background-color: ${({ theme }) => theme.colors.background.surfaceHover};
   border-bottom: 1px solid ${({ theme }) => theme.colors.border.default};
   border-top-left-radius: inherit;
@@ -54,9 +68,22 @@ const LeftGroup = styled.div`
 const DragHandle = styled.span`
   display: inline-flex;
   color: ${({ theme }) => theme.colors.text.muted};
+  border-radius: ${({ theme }) => theme.radii.sm};
   cursor: grab;
+  /* Laisse le geste tactile au glisser-déposer plutôt qu'au défilement de la page */
+  touch-action: none;
+
+  &:hover {
+    color: ${({ theme }) => theme.colors.text.body};
+  }
+
   &:active {
     cursor: grabbing;
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.colors.primary.base};
+    outline-offset: 2px;
   }
 `;
 
@@ -72,6 +99,7 @@ const Body = styled.div`
 
 export const BlockWrapper = ({
   blockType,
+  blockLabel,
   position,
   isFirst = false,
   isLast = false,
@@ -80,19 +108,23 @@ export const BlockWrapper = ({
   onDelete,
   onOpenSettings,
   dragHandleProps,
+  dragHandleRef,
+  isDragging = false,
   children,
   ...rest
 }: BlockWrapperProps) => {
   return (
-    <Shell {...rest}>
+    <Shell $isDragging={isDragging} {...rest}>
       <Toolbar>
         <LeftGroup>
-          <DragHandle title="Glisser pour déplacer" {...dragHandleProps}>
-            <Icon name="drag-vertical" size={18} />
-          </DragHandle>
+          {dragHandleProps && (
+            <DragHandle ref={dragHandleRef} title="Glisser pour déplacer" {...dragHandleProps}>
+              <Icon name="drag-vertical" size={18} />
+            </DragHandle>
+          )}
           <Badge variant="neutral">#{position}</Badge>
           <Badge variant="primary" pill>
-            {blockType.toUpperCase()}
+            {blockLabel ?? blockType.toUpperCase()}
           </Badge>
         </LeftGroup>
 

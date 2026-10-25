@@ -8,7 +8,7 @@ import { Text } from '@/ui/components/Typo/Text';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 
 const loginSchema = z.object({
@@ -23,8 +23,7 @@ const loginSchema = z.object({
         return isEmail || isUsername;
       },
       {
-        message:
-          "Veuillez renseigner une adresse e-mail valide ou un nom d'utilisateur (au moins 3 caractères)",
+        message: "Veuillez renseigner une adresse e-mail valide ou un nom d'utilisateur (au moins 3 caractères)",
       }
     ),
   password: z.string().min(1, 'Le mot de passe est obligatoire'),
@@ -32,10 +31,18 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>;
 
+interface LoginLocationState {
+  successMessage?: string;
+}
+
 export const LoginPage = () => {
   const [apiError, setApiError] = useState<string | null>(null);
   const { setAuth, token, user } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Message transmis après vérification de l'e-mail ou réinitialisation du mot de passe
+  const successMessage = (location.state as LoginLocationState | null)?.successMessage;
 
   // Redirection automatique si une session valide est déjà active
   useEffect(() => {
@@ -80,6 +87,12 @@ export const LoginPage = () => {
       </Card.Header>
       <Card.Body>
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
+          {successMessage && !apiError && (
+            <div style={{ marginBottom: '1rem' }}>
+              <Alert variant="success">{successMessage}</Alert>
+            </div>
+          )}
+
           {apiError && (
             <div style={{ marginBottom: '1rem' }}>
               <Alert variant="danger">{apiError}</Alert>
@@ -102,21 +115,36 @@ export const LoginPage = () => {
             {...register('password')}
           />
 
+          {/* Lot 2 : mailer
+          <div style={{ marginBottom: '1rem', textAlign: 'end' }}>
+            <Text size="sm">
+              <RouterLink to="/forgot-password" style={{ color: 'inherit', fontWeight: 600 }}>
+                Mot de passe oublié ?
+              </RouterLink>
+            </Text>
+          </div>
+          */}
+
           <Button type="submit" loading={isSubmitting} fullWidth>
             Se connecter
           </Button>
         </form>
       </Card.Body>
-      <Card.Footer style={{ justifyContent: 'center' }}>
+      <Card.Footer style={{ flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
         <Text size="sm">
           Pas encore de compte ?{' '}
-          <RouterLink
-            to="/register"
-            style={{ color: 'inherit', fontWeight: 600 }}
-          >
+          <RouterLink to="/register" style={{ color: 'inherit', fontWeight: 600 }}>
             Créer un compte
           </RouterLink>
         </Text>
+        {/* Lot 2 : mailer
+        <Text size="sm">
+          Compte non activé ?{' '}
+          <RouterLink to="/resend-otp" style={{ color: 'inherit', fontWeight: 600 }}>
+            Recevoir un code
+          </RouterLink>
+        </Text>
+        */}
       </Card.Footer>
     </Card>
   );

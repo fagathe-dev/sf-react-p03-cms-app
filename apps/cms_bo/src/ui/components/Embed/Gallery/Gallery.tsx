@@ -14,7 +14,7 @@ const StyledGallery = styled.div.attrs<GalleryProps>((props) => ({
   as: props.as || 'div',
 }))<GalleryProps>`
   width: 100%;
-  columns: ${({ columns = 3, minColumnWidth = '260px' }) => `${columns}${minColumnWidth}`};
+  columns: ${({ columns = 3, minColumnWidth = '260px' }) => `${columns} ${minColumnWidth}`};
   column-gap: ${({ gap, theme }) => gap || theme.spacing[4]};
   ${({ rule }) => rule && `column-rule: ${rule};`}
 

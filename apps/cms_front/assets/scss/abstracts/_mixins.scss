@@ -1,0 +1,31 @@
+@use 'sass:map';
+@use 'primitives' as *;
+
+/// Media query « à partir de » : @include media-up(md) { … }
+@mixin media-up($breakpoint) {
+  @if not map.has-key($breakpoints, $breakpoint) {
+    @error "Breakpoint #{$breakpoint} inconnu.";
+  }
+  @media (min-width: map.get($breakpoints, $breakpoint)) {
+    @content;
+  }
+}
+
+/// Anneau de focus visible (jamais d'outline: none sur un élément focusable)
+@mixin focus-ring {
+  outline: 2px solid var(--cms-color-primary);
+  outline-offset: 2px;
+}
+
+/// Masque visuellement un élément en le laissant lisible par les lecteurs d'écran
+@mixin visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    // esbuild fait le bundle ; tsc ne sert qu'à la vérification de types (npm run typecheck)
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "isolatedModules": true,
+    "paths": {
+      "@/*": ["./assets/ts/*"],
+      "@components/*": ["./assets/ts/components/*"]
+    },
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "alwaysStrict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+
+    "skipLibCheck": true
+  },
+  "include": ["assets/ts/**/*"],
+  "exclude": ["node_modules", "vendor", "var", "public", "tests"]
+}

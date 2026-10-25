@@ -2,7 +2,7 @@
     "type": "project",
     "license": "proprietary",
     "minimum-stability": "dev",
-    "prefer-stable": true,
+    "prefer-stable": false,
     "repositories": [
         {
         "type": "vcs",
@@ -17,17 +17,18 @@
         "php": ">=8.4",
         "ext-ctype": "*",
         "ext-iconv": "*",
-        "doctrine/doctrine-bundle": "^3.3.2",
+        "doctrine/doctrine-bundle": "^3.4.0",
         "doctrine/doctrine-migrations-bundle": "^3.7",
-        "doctrine/orm": "^3.7.5",
+        "doctrine/orm": "^3.8.0",
         "fagathe-dev/core-php": ">=1.0.15",
         "fagathe/cms-core": "*",
-        "lexik/jwt-authentication-bundle": "^3.2",
-        "nelmio/cors-bundle": "^2.6.1",
+        "lexik/jwt-authentication-bundle": "^3",
+        "nelmio/cors-bundle": "^2",
         "symfony/console": "8.1.*",
         "symfony/dotenv": "8.1.*",
-        "symfony/flex": "^2.11",
+        "symfony/flex": "^2",
         "symfony/framework-bundle": "8.1.*",
+        "symfony/monolog-bundle": "4.x-dev",
         "symfony/runtime": "8.1.*",
         "symfony/serializer": "8.1.*",
         "symfony/uid": "8.1.*",
@@ -86,8 +87,8 @@
         }
     },
     "require-dev": {
-        "doctrine/doctrine-fixtures-bundle": "^4.3.1",
-        "fakerphp/faker": "^1.24.1",
-        "symfony/maker-bundle": "^1.68"
+        "doctrine/doctrine-fixtures-bundle": "^4.4.0",
+        "fakerphp/faker": "^1.24.0",
+        "symfony/maker-bundle": "^1"
     }
 }

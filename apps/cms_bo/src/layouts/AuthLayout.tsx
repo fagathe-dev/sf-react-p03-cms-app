@@ -1,6 +1,6 @@
+// src/layouts/AuthLayout.tsx
 import { useTheme } from '@/hooks/useTheme';
-import { Icon } from '@/ui/components/Base/Icon';
-import { ThemeModeSwitcher } from '@/ui/components/Navigation/ThemeModeSwitcher';
+import { Icon, ThemeModeSwitcher } from '@/ui/components';
 import { Text } from '@/ui/components/Typo/Text';
 import { Outlet } from 'react-router-dom';
 import styled from 'styled-components';
@@ -46,9 +46,9 @@ export const AuthLayout = () => {
       </ThemeToggleWrapper>
 
       <BrandHeader>
-        <Icon name="check-decagram" size={40} color={theme.colors.primary.base} />
+        <Icon name="feather" size={40} color={theme.colors.primary.base} />
         <Text weight="bold" size="xl" color="secondary">
-          Base App
+          CMS Administration
         </Text>
       </BrandHeader>
 

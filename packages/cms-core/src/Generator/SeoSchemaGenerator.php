@@ -9,6 +9,7 @@ use Fagathe\CmsCore\Contract\SeoMetadataInterface;
 use Fagathe\CmsCore\Contract\TaxonomySeoInterface;
 use Fagathe\CmsCore\Enum\Seo\OgType;
 use Fagathe\CmsCore\Enum\Seo\RobotsDirective;
+use Fagathe\CmsCore\Service\FilePathResolver;
 
 class SeoSchemaGenerator
 {
@@ -22,6 +23,8 @@ class SeoSchemaGenerator
         private readonly ?string $defaultGeoRegion = 'FR',
         private readonly ?string $defaultGeoPlacename = null,
         private readonly ?string $defaultGeoPosition = null,
+        // Miniature servie par l'API (chemin relatif en BDD) : sans resolver, elle est résolue sur $siteUrl
+        private readonly ?FilePathResolver $fileResolver = null,
     ) {
         $this->siteUrl = $siteUrl ?? ($_ENV['APP_SITE_URL'] ?? 'http://localhost');
         $this->siteName = $siteName ?? ($_ENV['APP_SITE_NAME'] ?? 'Mon Blog Tech');
@@ -39,7 +42,8 @@ class SeoSchemaGenerator
     ): array {
         $title = $seo?->getMetaTitle() ?? $article->getTitle() ?? $this->siteName;
         $description = $seo?->getMetaDescription() ?? $article->getExcerpt() ?? '';
-        $image = $seo?->getOgImage() ?? $article->getThumbnail() ?? $this->defaultImage;
+        $thumbnail = $this->fileResolver?->resolveUrl($article->getThumbnail()) ?? $article->getThumbnail();
+        $image = $seo?->getOgImage() ?? $thumbnail ?? $this->defaultImage;
 
         return $this->buildMetaArray(
             title: $title,

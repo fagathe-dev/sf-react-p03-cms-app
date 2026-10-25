@@ -1,0 +1,37 @@
+// ==========================================================================
+// Reference Tokens (niveau 1) : valeurs brutes.
+// Ne jamais les utiliser directement dans un composant : passer par les
+// System Tokens (foundation/_tokens.scss).
+// ==========================================================================
+
+$palette-neutral: (
+  0: #ffffff,
+  50: #f8fafc,
+  100: #f1f5f9,
+  200: #e2e8f0,
+  400: #94a3b8,
+  600: #475569,
+  800: #1e293b,
+  900: #0f172a,
+);
+
+$palette-primary: (
+  50: #eff6ff,
+  500: #3b82f6,
+  600: #2563eb,
+  700: #1d4ed8,
+);
+
+// Échelle d'espacement de 4px (clé → multiple de 0.25rem)
+$space-unit: 0.25rem;
+$space-scale: (0, 1, 2, 3, 4, 6, 8, 12, 16);
+
+$font-family-sans: ('Inter', system-ui, -apple-system, 'Segoe UI', sans-serif);
+$font-family-mono: ('JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace);
+
+$breakpoints: (
+  sm: 640px,
+  md: 768px,
+  lg: 1024px,
+  xl: 1280px,
+);

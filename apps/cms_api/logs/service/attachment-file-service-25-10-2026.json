@@ -1,0 +1,94 @@
+[
+    {
+        "id": "LOG_20261025052508_6add84a533821",
+        "level": "info",
+        "content": {
+            "message": "Média d'article uploadé avec succès",
+            "data": {
+                "post_id": "01a16666-dd12-74a5-a841-39f28c430dec",
+                "file": "linkedin.png",
+                "size": "1,05 Ko"
+            }
+        },
+        "context": {
+            "ip": "128.79.243.31",
+            "device": "Desktop",
+            "browser": "Edge",
+            "url": "https:\/\/react-cms-api.dev.frederickagathe.fr\/api\/posts\/01a16666-dd12-74a5-a841-39f28c430dec\/medias",
+            "method": "POST",
+            "uid": "superadmin@cms.local",
+            "action": "post_media.upload.success",
+            "origin": "service\/attachment-file-service"
+        },
+        "timestamp": "2026-10-25 05:25:08"
+    },
+    {
+        "id": "LOG_20261025061208_6add8fa9579fb",
+        "level": "info",
+        "content": {
+            "message": "Média d'article uploadé avec succès",
+            "data": {
+                "post_id": "01a16666-dd12-74a5-a841-39f28c430dec",
+                "file": "kalen-emsley-Bkci_8qcdvQ-unsplash.jpg",
+                "size": "3,81 Mo"
+            }
+        },
+        "context": {
+            "ip": "128.79.243.31",
+            "device": "Desktop",
+            "browser": "Edge",
+            "url": "https:\/\/react-cms-api.dev.frederickagathe.fr\/api\/posts\/01a16666-dd12-74a5-a841-39f28c430dec\/medias",
+            "method": "POST",
+            "uid": "superadmin@cms.local",
+            "action": "post_media.upload.success",
+            "origin": "service\/attachment-file-service"
+        },
+        "timestamp": "2026-10-25 06:12:08"
+    },
+    {
+        "id": "LOG_20261025061807_6add910fc9ab3",
+        "level": "info",
+        "content": {
+            "message": "Média d'article uploadé avec succès",
+            "data": {
+                "post_id": "01a16666-dd12-74a5-a841-39f28c430dec",
+                "file": "kalen-emsley-Bkci_8qcdvQ-unsplash.jpg",
+                "size": "3,81 Mo"
+            }
+        },
+        "context": {
+            "ip": "128.79.243.31",
+            "device": "Desktop",
+            "browser": "Edge",
+            "url": "https:\/\/react-cms-api.dev.frederickagathe.fr\/api\/posts\/01a16666-dd12-74a5-a841-39f28c430dec\/medias",
+            "method": "POST",
+            "uid": "superadmin@cms.local",
+            "action": "post_media.upload.success",
+            "origin": "service\/attachment-file-service"
+        },
+        "timestamp": "2026-10-25 06:18:07"
+    },
+    {
+        "id": "LOG_20261025063220_6add946511b61",
+        "level": "info",
+        "content": {
+            "message": "Média d'article uploadé avec succès",
+            "data": {
+                "post_id": "01a16666-dd12-74a5-a841-39f28c430dec",
+                "file": "IMG_20221229_191607.jpg",
+                "size": "3,05 Mo"
+            }
+        },
+        "context": {
+            "ip": "128.79.243.31",
+            "device": "Desktop",
+            "browser": "Edge",
+            "url": "https:\/\/react-cms-api.dev.frederickagathe.fr\/api\/posts\/01a16666-dd12-74a5-a841-39f28c430dec\/medias",
+            "method": "POST",
+            "uid": "superadmin@cms.local",
+            "action": "post_media.upload.success",
+            "origin": "service\/attachment-file-service"
+        },
+        "timestamp": "2026-10-25 06:32:20"
+    }
+]

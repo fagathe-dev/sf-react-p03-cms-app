@@ -10,22 +10,19 @@ parameters:
 
 services:
     # default configuration for services in *this* file
+
     _defaults:
         autowire: true # Automatically injects dependencies in your services.
         autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
-        bind:
-            string $projectDir: "%kernel.project_dir%"
-            # string $defaultUri: "%env(DEFAULT_URI)%"
-            # string $uploadDir: 'uploads'
-            # string $environment: '%kernel.environment%'
+        # Les services de fagathe-dev/core-php (UploaderService…) et fagathe/cms-core sont déclarés par leurs bundles
+        # (CorePhpBundle, CmsCoreBundle) : ne pas les recharger ici, cela écraserait leurs arguments.
+        # Paramètres surchargeables : core_php.uploader.* (voir vendor/fagathe-dev/core-php/docs/uploader.md)
+        # $defaultUri des services cms-core : voir config/packages/cms_core.yaml
 
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name
     App\:
         resource: "../src/"
-
-    Fagathe\CorePhp\:
-        resource: "../vendor/fagathe-dev/core-php/src/"
 
     # App\EventListener\LoginSuccessListener:
     #     tags: [kernel.event_listener]

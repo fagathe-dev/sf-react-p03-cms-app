@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Fagathe\CmsCore\Repository;
 
 use Fagathe\CmsCore\Entity\User;
@@ -12,12 +14,13 @@ use Fagathe\CorePhp\Trait\DatetimeTrait;
 use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
+use Symfony\Bridge\Doctrine\Security\User\UserLoaderInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
  * @extends ServiceEntityRepository<User>
  */
-class UserRepository extends ServiceEntityRepository implements PasswordUpgraderInterface
+class UserRepository extends ServiceEntityRepository implements PasswordUpgraderInterface, UserLoaderInterface
 {
     use DatetimeTrait, FullTextSearchTrait;
 
@@ -68,6 +71,10 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         $this->getEntityManager()->flush();
     }
 
+    /**
+     * Appelé par le provider Doctrine (sans "property") : à la connexion comme au rechargement
+     * de l'utilisateur depuis le JWT, l'identifiant peut être un e-mail ou un username.
+     */
     public function loadUserByIdentifier(string $identifier): ?UserInterface
     {
         return $this->findByEmailOrUsername($identifier);

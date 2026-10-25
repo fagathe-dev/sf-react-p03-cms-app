@@ -50,6 +50,7 @@ final class PostService
         private readonly ValidatorInterface $validator,
         private readonly SluggerInterface $slugger,
         private readonly AttachmentFileService $attachmentService,
+        private readonly FilePathResolver $fileResolver,
         private readonly PostViewTracker $viewTracker,
         private readonly Security $security,
     ) {}
@@ -388,7 +389,12 @@ final class PostService
             return $this->notFoundResponse('Média introuvable pour cet article.');
         }
 
-        $this->attachmentService->delete($media);
+        if (!$this->attachmentService->delete($media)) {
+            return $this->sendJson(
+                ['message' => 'Erreur interne lors de la suppression du média.'],
+                Response::HTTP_INTERNAL_SERVER_ERROR
+            );
+        }
 
         return $this->sendNoContent();
     }
@@ -657,7 +663,9 @@ final class PostService
         $post->setSlug(strtolower($this->slugger->slug((string)$rawSlug)->toString()));
         $post->setExcerpt($dto->excerpt !== null && trim($dto->excerpt) !== '' ? trim($dto->excerpt) : null);
 
-        if ($dto->thumbnail !== null) {$post->setThumbnail(trim($dto->thumbnail) !== '' ? trim($dto->thumbnail) : null);
+        if ($dto->thumbnail !== null) {
+            // Le front renvoie l'URL absolue reçue de l'API : on stocke le chemin relatif
+            $post->setThumbnail($this->fileResolver->toStoredPath($dto->thumbnail));
         }
 
         $post->setStatus($dto->status);
