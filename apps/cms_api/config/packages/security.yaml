@@ -41,7 +41,7 @@ security:
 
     access_control:
         - {
-              path: ^/api/auth/(login|logout|register|verify-otp|resend-otp|forgot-password|reset-password),
+              path: ^/api/auth/(login|login-code|logout|register|verify-email|resend-verification|forgot-password|reset-password),
               roles: PUBLIC_ACCESS,
           }
         - { path: ^/api/health-check, roles: PUBLIC_ACCESS }

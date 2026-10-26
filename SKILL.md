@@ -167,8 +167,33 @@ Toutes les classes de service sont `final` (sauf `PostViewTracker` si destiné �
 - **`AttachmentFileService`** — Validation MIME/taille via `UploaderValidationService` (50 Mo max média, 10 Mo max miniature) et stockage via `UploaderService`.
 - **`SeoMetadataService`** — CRUD `SeoMetadata` et génération de paquets complets `{ meta, jsonLd }` via `SeoSchemaGenerator` et `JsonLdGenerator` (`buildForArticle`, `buildForTaxonomy`, `buildForStaticPage`) pour les entités implémentant `ArticleSeoInterface` ou `TaxonomySeoInterface`.
 - **`SearchService`** — Recherche Full-Text agrégée (`globalSearch`) retournant `{ posts, categories, tags, users }` avec filtrage selon `$isFront` (`onlyPublished` / `onlyVerified`).
-- **`AuthService` & `UserRequestService`** — Inscription, connexion avec décodage Base64 via `SecretDecoder`, gestion des OTP/tokens temporaires (`UserRequest`), réinitialisation de mot de passe.
+- **`AuthService` & `UserRequestService`** — Parcours d'authentification (la connexion par mot de passe est gérée par `ApiAuthenticator`, voir 2.2) :
+  - **Inscription** : compte créé non vérifié + lien de vérification **72h** (`UserRequestTypeEnum::EmailVerification`). Si l'e-mail ne peut pas partir, l'inscription est annulée. `verifyEmail` active le compte et renvoie un **JWT** (connexion automatique) ; `resendVerification` renvoie un lien (réponse constante).
+  - **Connexion sans mot de passe** : `requestLoginCode` envoie un code à 6 chiffres valable **1 min 30** (`OtpLogin`, `ttlSeconds`), un envoi toutes les 30 s maximum ; `loginWithCode` vérifie le code **pour cet utilisateur uniquement** (`findValidRequestForUser`), 5 essais avant révocation (`revokeActiveRequests`), puis renvoie un JWT.
+  - **Mot de passe oublié** : lien **24h** (`PasswordReset`) ; `resetPassword` valide `ResetPasswordDto` (mêmes règles que `User::$password`).
+  - Réponses constantes sur les endpoints acceptant un identifiant (anti-énumération) ; compteurs d'essais et délais d'envoi dans le cache applicatif (`CacheItemPoolInterface`).
 - **`AccountService` & `UserService`** — Gestion du profil connecté (`/account`) et administration des membres du back-office (`/users`, filtré par `getManageableRoles()`).
+  - **Suppression du compte confirmée par code** : `requestAccountDeletion` (`POST /account/delete-request`) envoie un code à 6 chiffres valable **10 min** (`UserRequestTypeEnum::AccountDeletion`, un envoi toutes les 30 s) ; `deleteAccount` (`DELETE /account`, `DeleteAccountDto { code }`) vérifie le code pour l'utilisateur connecté (5 essais avant révocation) puis supprime le compte et son avatar.
+- **`AdminUserManager`** (`Security\`) — Implémentation de `Fagathe\CorePhp\Command\AdminUserManagerInterface` pour la commande `core-php:create-admin-user` (`#[AsAlias]` obligatoire : l'interface vit dans core-php). L'administrateur est créé vérifié et reçoit un récapitulatif avec un lien `PasswordReset` de **72h** pour choisir son mot de passe ; un échec d'envoi est journalisé sans annuler la création.
+
+### 1.4 bis. Mailer (`Fagathe\CmsCore\Mailer`, `Dto\Mail`, `templates/emails`)
+
+Les e-mails reposent sur `Fagathe\CorePhp\Mailer\AbstractMailerHandler` (validation du DTO, contrôle DNS du destinataire, logs) :
+
+| E-mail | DTO (`Dto\Mail`) | Handler (`Mailer\Handler`) | Template |
+|---|---|---|---|
+| Vérification du compte | `AccountVerificationMailDto` | `AccountVerificationMailHandler` | `@CmsCore/emails/auth/account_verification.html.twig` |
+| Code de connexion | `LoginCodeMailDto` | `LoginCodeMailHandler` | `@CmsCore/emails/auth/login_code.html.twig` |
+| Mot de passe oublié | `ForgotPasswordMailDto` | `ForgotPasswordMailHandler` | `@CmsCore/emails/auth/forgot_password.html.twig` |
+| Bienvenue (compte vérifié) | `RegistrationConfirmedMailDto` | `RegistrationConfirmedMailHandler` | `@CmsCore/emails/auth/registration_confirmed.html.twig` |
+| Code de suppression de compte | `AccountDeletionCodeMailDto` | `AccountDeletionCodeMailHandler` | `@CmsCore/emails/auth/account_deletion_code.html.twig` |
+| Compte administrateur créé (⚠️ mot de passe en clair) | `AdminAccountCreatedMailDto` | `AdminAccountCreatedMailHandler` | `@CmsCore/emails/admin/account_created.html.twig` |
+
+- **Open/Closed** : chaque handler implémente `MailHandlerInterface` (`#[AutoconfigureTag]`, `getDtoClass()`). `MailDispatcher` les retrouve via un locator indexé par classe de DTO : **ajouter un e-mail = un DTO + un handler + un template**, `MailDispatcher` n'est pas modifié.
+- `MailDispatcher::dispatch()` lève `MailerExceptionInterface` ; `dispatchSilently()` n'échoue jamais (e-mails non bloquants).
+- Les liens des e-mails sont construits par `Generator\AuthLinkGenerator` à partir de `cms_core.app_url` (`/verify-email`, `/reset-password`, `/login`).
+- Prérequis portés par `cms-core` : `symfony/twig-bundle` (namespace `@CmsCore`) et `symfony/translation`.
+
 ### 1.5. Voters & groupes de sérialisation
  
 #### Voters (`Fagathe\CmsCore\Security\Voter`)
@@ -209,13 +234,16 @@ return $this->json($res->data, $res->status, $res->headers, $res->context);
 - **Exception unique** : `HealthCheckController` (`GET /health-check`) vérifie la latence DB (`SELECT 1`) et les droits d'écriture sur `/var`.
 ### 2.2. Sécurité & authentification (`config/packages/security.yaml`)
  
-- **Pas de firewall `json_login`** : la route `/api/auth/login` est en `PUBLIC_ACCESS` dans `access_control` et passe directement par `AuthController::login` → `AuthService::login`.
-- **Pourquoi** : le frontend encode les mots de passe en Base64 (`encodeSecret`). `AuthService` :
+- **Pas de firewall `json_login`** : `POST /api/auth/login` est interceptée par le custom authenticator `Fagathe\CmsCore\Security\ApiAuthenticator` (la route `AuthController::login` n'existe que pour le routeur).
+- **Pourquoi** : le frontend encode les mots de passe en Base64 (`encodeSecret`). `ApiAuthenticator` :
   1. décode le mot de passe via `SecretDecoder` ;
-  2. autorise la connexion par **username ou email** ;
-  3. vérifie le hash (`isPasswordValid`) ;
-  4. vérifie `$user->isVerified()` ;
-  5. génère le JWT via `JWTTokenManagerInterface::create($user)`.
+  2. autorise la connexion par **username ou email** (`UserRepository::findByEmailOrUsername()`) ;
+  3. laisse Symfony vérifier le hash, puis `UserChecker::checkPostAuth()` refuse un compte non vérifié (`EmailNotVerifiedException`) ;
+  4. génère le JWT via `JWTTokenManagerInterface::create($user)`.
+- **Erreurs** : 401 identique pour compte inconnu / mauvais mot de passe ; 403 `{ message, code: "email_not_verified" }` pour un compte non vérifié (exceptions implémentant `ApiErrorCodeAwareInterface`), ce qui permet au back-office de proposer le renvoi du lien.
+- **Routes publiques** (`access_control`) : `/api/auth/(login|login-code|logout|register|verify-email|resend-verification|forgot-password|reset-password)`. `login-code/verify` et `verify-email` renvoient eux aussi un JWT (`AuthService`).
+- **Configuration** : `cms_core.app_url` (`APP_URL`, URL de cms_bo ciblée par les liens des e-mails), `APP_NAME`, `DEFAULT_EMAIL_SENDER` et `MAILER_DSN` dans `.env.local`.
+- **Commandes core-php** : `core-php:create-admin-user` (via `AdminUserManager`) et `core-php:log-file-rotation`.
 - Le firewall `api` (`pattern: ^/api`) est `stateless: true` avec `jwt: ~`.
 ---
  
@@ -249,16 +277,23 @@ src/pages/
 │   │   ├── ChangeEmailForm.tsx
 │   │   ├── ChangeInformationsForm.tsx
 │   │   ├── ChangePasswordForm.tsx
+│   │   ├── CodeLoginForm.tsx        # Connexion sans mot de passe (code 1 min 30)
+│   │   ├── DeleteAccountCard.tsx    # Suppression du compte confirmée par code (10 min)
+│   │   ├── PasswordLoginForm.tsx    # Connexion identifiant + mot de passe
 │   │   ├── ProfileForms.styles.tsx  # Styles partagés par plusieurs composants du groupe
 │   │   └── index.ts                 # Barrel des composants
+│   ├── hooks/
+│   │   ├── useBackOfficeSession.ts  # Ouvre la session (refuse un compte sans rôle back-office)
+│   │   └── index.ts
+│   ├── schemas/                     # Schémas zod partagés (password, identifier, loginCode)
 │   ├── ForgotPasswordPage.tsx
-│   ├── LoginPage.tsx
+│   ├── LoginPage.tsx                # Choix du mode : mot de passe / code par e-mail
 │   ├── LogoutPage.tsx
 │   ├── ProfilePage.tsx
 │   ├── RegisterPage.tsx
-│   ├── ResendOtpPage.tsx
-│   ├── ResetPasswordPage.tsx
-│   ├── VerifyOtpPage.tsx
+│   ├── ResendVerificationPage.tsx   # Renvoi du lien de vérification
+│   ├── ResetPasswordPage.tsx        # Lien e-mail /reset-password?token=…
+│   ├── VerifyEmailPage.tsx          # Lien e-mail /verify-email?token=… → connexion automatique
 │   └── index.ts                     # Barrel des pages de la fonctionnalité
 ├── moderation/
 ├── post/

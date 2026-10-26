@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Fagathe\CmsCore\Security;
 
 use Fagathe\CmsCore\Repository\UserRepository;
+use Fagathe\CmsCore\Security\Exception\ApiErrorCodeAwareInterface;
 use Fagathe\CmsCore\Service\SecretDecoder;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -104,8 +105,14 @@ final class ApiAuthenticator extends AbstractAuthenticator
     public function onAuthenticationFailure(Request $request, AuthenticationException $exception): ?Response
     {
         // Compte existant, mot de passe correct, mais statut bloquant (ex. e-mail non vérifié) → UserChecker.
+        // Le code métier éventuel (ex. "email_not_verified") permet au front de proposer l'action adaptée.
         if ($exception instanceof AccountStatusException) {
-            return new JsonResponse(['message' => $exception->getMessageKey()], Response::HTTP_FORBIDDEN);
+            $payload = ['message' => $exception->getMessageKey()];
+            if ($exception instanceof ApiErrorCodeAwareInterface) {
+                $payload['code'] = $exception->getErrorCode();
+            }
+
+            return new JsonResponse($payload, Response::HTTP_FORBIDDEN);
         }
 
         // Payload mal formé ou incomplet : message explicite, aucune information sur le compte.

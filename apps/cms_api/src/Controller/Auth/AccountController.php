@@ -59,10 +59,24 @@ final class AccountController extends AbstractController
         return $this->json($res->data, $res->status, $res->headers, $res->context);
     }
 
-    #[Route('', name: 'delete', methods: ['DELETE'])]
-    public function deleteAccount(): JsonResponse
+    /**
+     * Suppression du compte, étape 1 : envoi du code de confirmation par e-mail
+     */
+    #[Route('/delete-request', name: 'delete_request', methods: ['POST'])]
+    public function requestAccountDeletion(): JsonResponse
     {
-        $res = $this->service->deleteAccount();
+        $res = $this->service->requestAccountDeletion();
+
+        return $this->json($res->data, $res->status, $res->headers, $res->context);
+    }
+
+    /**
+     * Suppression du compte, étape 2 : suppression définitive avec le code reçu ({ "code": "123456" })
+     */
+    #[Route('', name: 'delete', methods: ['DELETE'])]
+    public function deleteAccount(Request $request): JsonResponse
+    {
+        $res = $this->service->deleteAccount($request);
 
         return $this->json($res->data, $res->status, $res->headers, $res->context);
     }

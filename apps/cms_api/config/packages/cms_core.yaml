@@ -1,3 +1,5 @@
 cms_core:
     # URL de base des fichiers uploadés (avatars, miniatures, médias d'articles)
     default_uri: '%env(DEFAULT_URI)%'
+    # URL du back-office (cms_bo) ciblée par les liens des e-mails : /verify-email, /reset-password, /login
+    app_url: '%env(default::APP_URL)%'

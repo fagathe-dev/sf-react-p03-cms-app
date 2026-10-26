@@ -18,6 +18,7 @@ class CmsCoreBundle extends AbstractBundle
      *
      *     cms_core:
      *         default_uri: '%env(DEFAULT_URI)%'
+     *         app_url: '%env(default::APP_URL)%'
      */
     public function configure(DefinitionConfigurator $definition): void
     {
@@ -25,6 +26,10 @@ class CmsCoreBundle extends AbstractBundle
             ->children()
                 ->scalarNode('default_uri')
                     ->info('URL de base des fichiers uploadés (ex. https://api.example.com). Null : origine de la requête courante.')
+                    ->defaultNull()
+                ->end()
+                ->scalarNode('app_url')
+                    ->info('URL de l\'application ciblée par les liens des e-mails (vérification du compte, mot de passe oublié). Null : origine de la requête courante.')
                     ->defaultNull()
                 ->end()
             ->end();
@@ -57,6 +62,8 @@ class CmsCoreBundle extends AbstractBundle
             ->autoconfigure()
             // Injecté dans FilePathResolver pour construire les URL absolues des fichiers
             ->bind('$defaultUri', $config['default_uri'] ?? null)
+            // Injecté dans AuthLinkGenerator pour construire les liens des e-mails d'authentification
+            ->bind('$appUrl', $config['app_url'] ?? null)
             // Paramètre déclaré par CorePhpBundle (config/my_uploader.yaml), qui fournit aussi UploaderService
             ->bind('string $uploadDir', '%core_php.uploader.upload_dir%');
 

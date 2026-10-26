@@ -1,19 +1,24 @@
 import {
+  AccountDeletionRequestResponse,
   AuthResponse,
   ChangeEmailPayload,
   ChangePasswordPayload,
+  DeleteAccountPayload,
   ForgotPasswordPayload,
+  IdentifierPayload,
+  LoginCodePayload,
+  LoginCodeRequestResponse,
   LoginPayload,
   MessageResponse,
   RegisterPayload,
   RegisterResponse,
-  ResendOtpPayload,
   ResetPasswordPayload,
   UpdateProfilePayload,
   User,
-  VerifyOtpPayload,
+  VerifyEmailPayload,
 } from '@/types';
 import { encodeSecret } from '@/utils';
+import { toApiError } from './apiError';
 import { fetchAPI } from './fetchAPI';
 
 const AUTH_BASE_URL = '/auth';
@@ -56,33 +61,63 @@ export const fetchLogin = async (credentials: LoginPayload): Promise<AuthRespons
   });
 
   if (!res.ok) {
-    throw new Error(extractErrorMessage(res.data, 'Identifiants invalides'));
+    // ApiError : conserve le code métier (ex. `email_not_verified`)
+    throw toApiError(res.data, 'Identifiants invalides');
   }
 
   return res.data;
 };
 
-export const fetchVerifyOtp = async (payload: VerifyOtpPayload): Promise<MessageResponse> => {
-  const res = await fetchAPI<MessageResponse>(`${AUTH_BASE_URL}/verify-otp`, {
+/** Connexion sans mot de passe, étape 1 : envoi d'un code temporaire par e-mail */
+export const fetchRequestLoginCode = async (payload: IdentifierPayload): Promise<LoginCodeRequestResponse> => {
+  const res = await fetchAPI<LoginCodeRequestResponse>(`${AUTH_BASE_URL}/login-code`, {
     method: 'POST',
     body: payload,
   });
 
   if (!res.ok) {
-    throw new Error(extractErrorMessage(res.data, 'Code de vérification invalide'));
+    throw toApiError(res.data, "Impossible d'envoyer le code de connexion");
   }
 
   return res.data;
 };
 
-export const fetchResendOtp = async (payload: ResendOtpPayload): Promise<MessageResponse> => {
-  const res = await fetchAPI<MessageResponse>(`${AUTH_BASE_URL}/resend-otp`, {
+/** Connexion sans mot de passe, étape 2 : identifiant + code reçu */
+export const fetchLoginWithCode = async (payload: LoginCodePayload): Promise<AuthResponse> => {
+  const res = await fetchAPI<AuthResponse>(`${AUTH_BASE_URL}/login-code/verify`, {
     method: 'POST',
     body: payload,
   });
 
   if (!res.ok) {
-    throw new Error(extractErrorMessage(res.data, "Erreur lors de l'envoi du code"));
+    throw toApiError(res.data, 'Code invalide ou expiré');
+  }
+
+  return res.data;
+};
+
+/** Lien reçu à l'inscription : active le compte et renvoie une session (connexion automatique) */
+export const fetchVerifyEmail = async (payload: VerifyEmailPayload): Promise<AuthResponse> => {
+  const res = await fetchAPI<AuthResponse>(`${AUTH_BASE_URL}/verify-email`, {
+    method: 'POST',
+    body: payload,
+  });
+
+  if (!res.ok) {
+    throw toApiError(res.data, 'Ce lien de vérification est invalide ou a expiré');
+  }
+
+  return res.data;
+};
+
+export const fetchResendVerification = async (payload: IdentifierPayload): Promise<MessageResponse> => {
+  const res = await fetchAPI<MessageResponse>(`${AUTH_BASE_URL}/resend-verification`, {
+    method: 'POST',
+    body: payload,
+  });
+
+  if (!res.ok) {
+    throw toApiError(res.data, "Erreur lors de l'envoi du lien de vérification");
   }
 
   return res.data;
@@ -95,7 +130,7 @@ export const fetchForgotPassword = async (payload: ForgotPasswordPayload): Promi
   });
 
   if (!res.ok) {
-    throw new Error(extractErrorMessage(res.data, 'Erreur lors de la demande de réinitialisation'));
+    throw toApiError(res.data, 'Erreur lors de la demande de réinitialisation');
   }
 
   return res.data;
@@ -108,7 +143,7 @@ export const fetchResetPassword = async (payload: ResetPasswordPayload): Promise
   });
 
   if (!res.ok) {
-    throw new Error(extractErrorMessage(res.data, 'Erreur lors de la réinitialisation du mot de passe'));
+    throw toApiError(res.data, 'Erreur lors de la réinitialisation du mot de passe');
   }
 
   return res.data;
@@ -188,12 +223,27 @@ export const updatePassword = async (payload: ChangePasswordPayload): Promise<{ 
   return res.data;
 };
 
-export const deleteAccount = async (): Promise<void> => {
-  const res = await fetchAPI(`${ACCOUNT_BASE_URL}`, {
-    method: 'DELETE',
+/** Suppression du compte, étape 1 : envoi d'un code de confirmation (10 min) par e-mail */
+export const requestAccountDeletion = async (): Promise<AccountDeletionRequestResponse> => {
+  const res = await fetchAPI<AccountDeletionRequestResponse>(`${ACCOUNT_BASE_URL}/delete-request`, {
+    method: 'POST',
   });
 
   if (!res.ok) {
-    throw new Error(extractErrorMessage(res.data, 'Erreur lors de la suppression du compte'));
+    throw toApiError(res.data, "Impossible d'envoyer le code de confirmation");
+  }
+
+  return res.data;
+};
+
+/** Suppression du compte, étape 2 : suppression définitive avec le code reçu */
+export const deleteAccount = async (payload: DeleteAccountPayload): Promise<void> => {
+  const res = await fetchAPI(`${ACCOUNT_BASE_URL}`, {
+    method: 'DELETE',
+    body: payload,
+  });
+
+  if (!res.ok) {
+    throw toApiError(res.data, 'Erreur lors de la suppression du compte');
   }
 };

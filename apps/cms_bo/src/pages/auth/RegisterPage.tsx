@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
+import { passwordSchema } from './schemas';
 
 const registerSchema = z
   .object({
@@ -20,13 +21,7 @@ const registerSchema = z
       .trim()
       .min(3, "Le nom d'utilisateur doit contenir au moins 3 caractères")
       .max(90, "Le nom d'utilisateur doit contenir au maximum 90 caractères"),
-    password: z
-      .string()
-      .min(8, 'Le mot de passe doit comporter au moins 8 caractères')
-      .regex(
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-        'Le mot de passe doit contenir au moins une majuscule, une minuscule et un chiffre'
-      ),
+    password: passwordSchema,
     confirmPassword: z.string().min(1, 'Veuillez confirmer votre mot de passe'),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -57,20 +52,15 @@ export const RegisterPage = () => {
   const onSubmit = async (data: RegisterFormData) => {
     setApiError(null);
     try {
-      // 1. Inscription sur l'API Symfony (le compte est créé non vérifié)
+      // 1. Inscription sur l'API Symfony : le compte est créé non vérifié et un lien (72h) est envoyé par e-mail
       const { message } = await fetchRegister({
         email: data.email,
         username: data.username,
         password: data.password,
       });
 
-      // 2. Redirection vers la connexion
+      // 2. Redirection vers la connexion ; le clic sur le lien reçu connecte automatiquement l'utilisateur
       navigate('/login', { state: { successMessage: message } });
-
-      // Lot 2 : mailer — redirection vers la saisie du code OTP reçu par e-mail
-      // navigate(`/verify-otp?email=${encodeURIComponent(data.email)}`, {
-      //   state: { successMessage: message },
-      // });
     } catch (err) {
       setApiError(
         err instanceof Error ? err.message : "Erreur lors de l'inscription"

@@ -9,4 +9,5 @@ enum UserRequestTypeEnum: string
     case EmailVerification = 'email_verification';
     case PasswordReset = 'password_reset';
     case EmailChange = 'email_change';
+    case AccountDeletion = 'account_deletion';
 }

@@ -1,47 +1,27 @@
-import { fetchLogin, fetchProfile } from '@/services/auth.api';
 import { useAuthStore } from '@/stores/auth.store';
-import { Button } from '@/ui/components/Base/Button';
-import { Card } from '@/ui/components/Content/Card';
-import { Alert } from '@/ui/components/Feedback/Alert';
-import { TextField } from '@/ui/components/Forms/Fields/TextField';
-import { Text } from '@/ui/components/Typo/Text';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { Alert, Card, SegmentedControl, Text } from '@/ui/components';
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
-import { z } from 'zod';
+import { CodeLoginForm, PasswordLoginForm } from './components';
 
-const loginSchema = z.object({
-  username: z
-    .string()
-    .trim()
-    .min(1, "L'identifiant est obligatoire")
-    .refine(
-      (val) => {
-        const isEmail = z.email().safeParse(val).success;
-        const isUsername = val.length >= 3;
-        return isEmail || isUsername;
-      },
-      {
-        message: "Veuillez renseigner une adresse e-mail valide ou un nom d'utilisateur (au moins 3 caractères)",
-      }
-    ),
-  password: z.string().min(1, 'Le mot de passe est obligatoire'),
-});
+type LoginMode = 'password' | 'code';
 
-type LoginFormData = z.infer<typeof loginSchema>;
+const LOGIN_MODES: Array<{ value: LoginMode; label: string; icon: string }> = [
+  { value: 'password', label: 'Mot de passe', icon: 'lock-outline' },
+  { value: 'code', label: 'Code par e-mail', icon: 'email-fast-outline' },
+];
 
 interface LoginLocationState {
   successMessage?: string;
 }
 
 export const LoginPage = () => {
-  const [apiError, setApiError] = useState<string | null>(null);
-  const { setAuth, token, user } = useAuthStore();
+  const [mode, setMode] = useState<LoginMode>('password');
+  const { token, user } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Message transmis après vérification de l'e-mail ou réinitialisation du mot de passe
+  // Message transmis après inscription ou réinitialisation du mot de passe
   const successMessage = (location.state as LoginLocationState | null)?.successMessage;
 
   // Redirection automatique si une session valide est déjà active
@@ -51,84 +31,29 @@ export const LoginPage = () => {
     }
   }, [token, user, navigate]);
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      username: '',
-      password: '',
-    },
-  });
-
-  const onSubmit = async (data: LoginFormData) => {
-    setApiError(null);
-    try {
-      // 1. Récupération du JWT Lexik
-      const { token } = await fetchLogin(data);
-
-      // 2. Récupération du profil utilisateur associé
-      const userProfile = await fetchProfile(token);
-
-      // 3. Hydratation complète du store et redirection
-      setAuth(token, userProfile);
-      navigate('/');
-    } catch (err) {
-      setApiError(err instanceof Error ? err.message : 'Erreur de connexion');
-    }
-  };
-
   return (
     <Card elevation="sm">
       <Card.Header>
         <Card.Title>Connexion</Card.Title>
       </Card.Header>
       <Card.Body>
-        <form onSubmit={handleSubmit(onSubmit)} noValidate>
-          {successMessage && !apiError && (
-            <div style={{ marginBottom: '1rem' }}>
-              <Alert variant="success">{successMessage}</Alert>
-            </div>
-          )}
-
-          {apiError && (
-            <div style={{ marginBottom: '1rem' }}>
-              <Alert variant="danger">{apiError}</Alert>
-            </div>
-          )}
-
-          <TextField
-            label="E-mail ou nom d'utilisateur"
-            type="text"
-            placeholder="Ex : john@example.com ou johndoe"
-            error={errors.username?.message}
-            {...register('username')}
-          />
-
-          <TextField
-            label="Mot de passe"
-            type="password"
-            placeholder="••••••••"
-            error={errors.password?.message}
-            {...register('password')}
-          />
-
-          {/* Lot 2 : mailer
-          <div style={{ marginBottom: '1rem', textAlign: 'end' }}>
-            <Text size="sm">
-              <RouterLink to="/forgot-password" style={{ color: 'inherit', fontWeight: 600 }}>
-                Mot de passe oublié ?
-              </RouterLink>
-            </Text>
+        {successMessage && (
+          <div style={{ marginBottom: '1rem' }}>
+            <Alert variant="success">{successMessage}</Alert>
           </div>
-          */}
+        )}
 
-          <Button type="submit" loading={isSubmitting} fullWidth>
-            Se connecter
-          </Button>
-        </form>
+        <div style={{ marginBottom: '1rem' }}>
+          <SegmentedControl
+            aria-label="Mode de connexion"
+            options={LOGIN_MODES}
+            value={mode}
+            onChange={setMode}
+            fullWidth
+          />
+        </div>
+
+        {mode === 'password' ? <PasswordLoginForm /> : <CodeLoginForm />}
       </Card.Body>
       <Card.Footer style={{ flexDirection: 'column', alignItems: 'center', gap: '0.25rem' }}>
         <Text size="sm">
@@ -137,14 +62,12 @@ export const LoginPage = () => {
             Créer un compte
           </RouterLink>
         </Text>
-        {/* Lot 2 : mailer
         <Text size="sm">
           Compte non activé ?{' '}
-          <RouterLink to="/resend-otp" style={{ color: 'inherit', fontWeight: 600 }}>
-            Recevoir un code
+          <RouterLink to="/resend-verification" style={{ color: 'inherit', fontWeight: 600 }}>
+            Recevoir un nouveau lien
           </RouterLink>
         </Text>
-        */}
       </Card.Footer>
     </Card>
   );

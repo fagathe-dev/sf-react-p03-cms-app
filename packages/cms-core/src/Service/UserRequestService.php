@@ -25,17 +25,21 @@ final class UserRequestService
     ) {}
 
     /**
+     * Crée une demande (OTP à 6 chiffres ou jeton de 64 caractères) et révoque les demandes actives du même type.
+     *
      * @param array<string, mixed>|null $payload
+     * @param int|null                  $ttlSeconds Durée de validité en secondes (prioritaire sur $ttlMinutes)
      */
     public function createRequest(
         User $user,
         UserRequestTypeEnum $type,
         int $ttlMinutes = 15,
         bool $isOtp = true,
-        ?array $payload = null
+        ?array $payload = null,
+        ?int $ttlSeconds = null,
     ): ?UserRequest {
         $now = $this->now();
-        $expiresAt = $this->modifyDateTime(sprintf('+%d minutes', $ttlMinutes), $now);
+        $expiresAt = $this->modifyDateTime(sprintf('+%d seconds', $ttlSeconds ?? $ttlMinutes * 60), $now);
 
         $this->invalidateActiveRequests($user, $type);
 
@@ -77,7 +81,7 @@ final class UserRequestService
                 [
                     'message'   => 'Échec lors de la création de la UserRequest',
                     'data'      => ['user_id' => (string) $user->getId()],
-                    'exception' => $e->getMessage(),
+                    'exception' => $e,
                 ],
                 ['action' => 'user_request.create.error']
             );
@@ -112,6 +116,51 @@ final class UserRequestService
         return $userRequest;
     }
 
+    /**
+     * Vérifie un code / jeton parmi les demandes d'un utilisateur donné uniquement.
+     * Indispensable pour les codes à 6 chiffres, qui ne sont pas uniques entre utilisateurs.
+     */
+    public function findValidRequestForUser(User $user, string $identifier, UserRequestTypeEnum $type): ?UserRequest
+    {
+        /** @var UserRequest|null $userRequest */
+        $userRequest = $this->repository->findOneBy([
+            'user'   => $user,
+            'code'   => $identifier,
+            'type'   => $type,
+            'isUsed' => false,
+        ]) ?? $this->repository->findOneBy([
+            'user'   => $user,
+            'token'  => $identifier,
+            'type'   => $type,
+            'isUsed' => false,
+        ]);
+
+        if (!$userRequest) {
+            return null;
+        }
+
+        if ($this->isPastDate($userRequest->getExpiresAt())) {
+            $this->consume($userRequest);
+
+            return null;
+        }
+
+        return $userRequest;
+    }
+
+    /**
+     * Révoque toutes les demandes actives d'un type (ex. trop de tentatives sur un code).
+     */
+    public function revokeActiveRequests(User $user, UserRequestTypeEnum $type): void
+    {
+        $revoked = $this->invalidateActiveRequests($user, $type);
+        $last = array_key_last($revoked);
+
+        foreach ($revoked as $index => $request) {
+            $this->repository->save($request, flush: $index === $last, isCreation: false);
+        }
+    }
+
     public function consume(UserRequest $request): void
     {
         $request->setIsUsed(true);
@@ -119,7 +168,12 @@ final class UserRequestService
         $this->repository->save($request, flush: true, isCreation: false);
     }
 
-    private function invalidateActiveRequests(User $user, UserRequestTypeEnum $type): void
+    /**
+     * Marque les demandes actives comme utilisées (persistées au prochain flush).
+     *
+     * @return list<UserRequest>
+     */
+    private function invalidateActiveRequests(User $user, UserRequestTypeEnum $type): array
     {
         $activeRequests = $this->repository->findBy([
             'user'   => $user,
@@ -132,5 +186,7 @@ final class UserRequestService
             $req->setIsUsed(true);
             $req->setUpdatedAt($now);
         }
+
+        return array_values($activeRequests);
     }
 }

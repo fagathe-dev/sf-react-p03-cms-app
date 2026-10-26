@@ -11,6 +11,9 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
+/**
+ * Routes publiques d'authentification (access_control : ^/api/auth/ en PUBLIC_ACCESS).
+ */
 #[Route('/auth', name: 'api_auth_')]
 final class AuthController extends AbstractController
 {
@@ -18,15 +21,34 @@ final class AuthController extends AbstractController
         private readonly AuthService $service,
     ) {}
 
+    /**
+     * Connexion par mot de passe : interceptée par Fagathe\CmsCore\Security\ApiAuthenticator
+     * (firewall "api"), qui renvoie le JWT. La route n'existe que pour être résolue par le routeur.
+     */
     #[Route('/login', name: 'login', methods: ['POST'])]
-    public function login(Request $request): JsonResponse
+    public function login(): never
     {
-        echo json_encode([
-            'message' => 'Test message !',
-        ]);
-        http_response_code(Response::HTTP_PARTIAL_CONTENT);
-        die;
-        $res = $this->service->login($request);
+        throw new \LogicException('Cette route est gérée par ApiAuthenticator (firewall "api").');
+    }
+
+    /**
+     * Connexion sans mot de passe, étape 1 : envoi du code temporaire par e-mail
+     */
+    #[Route('/login-code', name: 'login_code_request', methods: ['POST'])]
+    public function requestLoginCode(Request $request): JsonResponse
+    {
+        $res = $this->service->requestLoginCode($request);
+
+        return $this->json($res->data, $res->status, $res->headers, $res->context);
+    }
+
+    /**
+     * Connexion sans mot de passe, étape 2 : identifiant + code → JWT
+     */
+    #[Route('/login-code/verify', name: 'login_code_verify', methods: ['POST'])]
+    public function loginWithCode(Request $request): JsonResponse
+    {
+        $res = $this->service->loginWithCode($request);
 
         return $this->json($res->data, $res->status, $res->headers, $res->context);
     }
@@ -39,18 +61,21 @@ final class AuthController extends AbstractController
         return $this->json($res->data, $res->status, $res->headers, $res->context);
     }
 
-    #[Route('/verify-otp', name: 'verify_otp', methods: ['POST'])]
-    public function verifyOtp(Request $request): JsonResponse
+    /**
+     * Lien de vérification reçu à l'inscription : active le compte et renvoie un JWT (connexion automatique)
+     */
+    #[Route('/verify-email', name: 'verify_email', methods: ['POST'])]
+    public function verifyEmail(Request $request): JsonResponse
     {
-        $res = $this->service->verifyOtp($request);
+        $res = $this->service->verifyEmail($request);
 
         return $this->json($res->data, $res->status, $res->headers, $res->context);
     }
 
-    #[Route('/resend-otp', name: 'resend_otp', methods: ['POST'])]
-    public function resendOtp(Request $request): JsonResponse
+    #[Route('/resend-verification', name: 'resend_verification', methods: ['POST'])]
+    public function resendVerification(Request $request): JsonResponse
     {
-        $res = $this->service->resendOtp($request);
+        $res = $this->service->resendVerification($request);
 
         return $this->json($res->data, $res->status, $res->headers, $res->context);
     }

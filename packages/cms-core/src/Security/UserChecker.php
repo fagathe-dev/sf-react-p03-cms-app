@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Fagathe\CmsCore\Security;
 
 use Fagathe\CmsCore\Entity\User;
+use Fagathe\CmsCore\Security\Exception\EmailNotVerifiedException;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
-use Symfony\Component\Security\Core\Exception\CustomUserMessageAccountStatusException;
 use Symfony\Component\Security\Core\User\UserCheckerInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
@@ -40,9 +40,7 @@ final class UserChecker implements UserCheckerInterface
         }
 
         if (!$user->isVerified()) {
-            throw new CustomUserMessageAccountStatusException(
-                'Veuillez vérifier votre adresse e-mail avant de vous connecter.'
-            );
+            throw new EmailNotVerifiedException();
         }
     }
 }

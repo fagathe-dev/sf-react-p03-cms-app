@@ -5,7 +5,7 @@ import {
   CategoryCreatePage,
   CategoryEditPage,
   CommentModerationPage,
-  // ForgotPasswordPage, // Lot 2 : mailer
+  ForgotPasswordPage,
   LoginPage,
   LogoutPage,
   PostCreatePage,
@@ -18,8 +18,8 @@ import {
   PostsTrashPage,
   ProfilePage,
   RegisterPage,
-  // ResendOtpPage, // Lot 2 : mailer
-  // ResetPasswordPage, // Lot 2 : mailer
+  ResendVerificationPage,
+  ResetPasswordPage,
   SearchPage,
   SeoMetadataPage,
   TagCreatePage,
@@ -29,6 +29,7 @@ import {
   UserDetailsPage,
   UserEditPage,
   UsersPage,
+  VerifyEmailPage,
 } from '@/pages';
 import { ProtectedRoute } from '@/router/protectedRoute';
 import { PublicRoute } from '@/router/publicRoute';
@@ -162,29 +163,35 @@ export const router = createBrowserRouter([
             path: '/register',
             element: <RegisterPage />,
           },
-          // Lot 2 : mot de passe oublié & vérification OTP (nécessitent l'API mailer)
-          // {
-          //   path: '/forgot-password',
-          //   element: <ForgotPasswordPage />,
-          // },
-          // {
-          //   path: '/reset-password',
-          //   element: <ResetPasswordPage />,
-          // },
-          // {
-          //   path: '/verify-otp',
-          //   element: <VerifyOtpPage />,
-          // },
-          // {
-          //   path: '/resend-otp',
-          //   element: <ResendOtpPage />,
-          // },
+          {
+            path: '/forgot-password',
+            element: <ForgotPasswordPage />,
+          },
+          {
+            path: '/resend-verification',
+            element: <ResendVerificationPage />,
+          },
         ],
       },
     ],
   },
 
-  // 3. Fallback 404
+  // 3. Liens reçus par e-mail : accessibles connecté ou non (le jeton fait foi)
+  {
+    element: <AuthLayout />,
+    children: [
+      {
+        path: '/verify-email',
+        element: <VerifyEmailPage />,
+      },
+      {
+        path: '/reset-password',
+        element: <ResetPasswordPage />,
+      },
+    ],
+  },
+
+  // 4. Fallback 404
   {
     path: '*',
     element: <Navigate to="/" replace />,

@@ -5,16 +5,11 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link as RouterLink, useNavigate, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
+import { passwordSchema } from './schemas';
 
 const resetPasswordSchema = z
   .object({
-    password: z
-      .string()
-      .min(8, 'Le mot de passe doit comporter au moins 8 caractères')
-      .regex(
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-        'Le mot de passe doit contenir au moins une majuscule, une minuscule et un chiffre'
-      ),
+    password: passwordSchema,
     confirmPassword: z.string().min(1, 'Veuillez confirmer votre mot de passe'),
   })
   .refine((data) => data.password === data.confirmPassword, {

@@ -3,6 +3,6 @@ export * from './LoginPage';
 export * from './LogoutPage';
 export * from './ProfilePage';
 export * from './RegisterPage';
-export * from './ResendOtpPage';
+export * from './ResendVerificationPage';
 export * from './ResetPasswordPage';
-export * from './VerifyOtpPage';
+export * from './VerifyEmailPage';
