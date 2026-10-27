@@ -14,7 +14,9 @@ trait ConfigurableEntityTrait
      * @var array<string, mixed>|null
      */
     #[ORM\Column(type: Types::JSON, nullable: true)]
-    #[Groups(['post.read', 'bloc.read', 'file.read', 'category.read', 'comment.read'])]
+    // category.list : l'icône de repli (settings.icon) d'une catégorie sans image est affichée dans les listes
+    // dashboard.read : le tableau de bord lit settings.is_featured / settings.moderation_note des articles listés
+    #[Groups(['post.read', 'bloc.read', 'file.read', 'category.list', 'category.read', 'comment.read', 'dashboard.read'])]
     private ?array $settings = null;
 
     /**

@@ -1,0 +1,42 @@
+[
+    {
+        "id": "LOG_20261027022625_6adffdc175352",
+        "level": "info",
+        "content": {
+            "message": "Connexion par code",
+            "data": {
+                "user_id": "01a17aa3-7bc1-76d9-b7b9-20b6bf0ba525"
+            }
+        },
+        "context": {
+            "ip": "128.79.243.31",
+            "device": "Desktop",
+            "browser": "Edge",
+            "url": "https:\/\/react-cms-api.dev.frederickagathe.fr\/api\/auth\/login-code\/verify",
+            "method": "POST",
+            "action": "user.login_code.success",
+            "origin": "service\/auth-service"
+        },
+        "timestamp": "2026-10-27 02:26:25"
+    },
+    {
+        "id": "LOG_20261027034823_6ae010f76ae44",
+        "level": "info",
+        "content": {
+            "message": "Mot de passe réinitialisé",
+            "data": {
+                "user_id": "01a17b41-7cc4-72c9-b5af-f7facf128882"
+            }
+        },
+        "context": {
+            "ip": "128.79.243.31",
+            "device": "Desktop",
+            "browser": "Edge",
+            "url": "https:\/\/react-cms-api.dev.frederickagathe.fr\/api\/auth\/reset-password",
+            "method": "POST",
+            "action": "user.password_reset.success",
+            "origin": "service\/auth-service"
+        },
+        "timestamp": "2026-10-27 03:48:23"
+    }
+]

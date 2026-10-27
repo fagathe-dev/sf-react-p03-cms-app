@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Fagathe\CmsCore\Serializer;
 
 use Fagathe\CmsCore\Entity\AbstractFile;
+use Fagathe\CmsCore\Entity\Category;
 use Fagathe\CmsCore\Entity\Post;
 use Fagathe\CmsCore\Entity\User;
 use Fagathe\CmsCore\Service\FilePathResolver;
@@ -26,6 +27,7 @@ final class FileUrlNormalizer implements NormalizerInterface, NormalizerAwareInt
     private const FILE_PROPERTIES = [
         User::class         => ['avatar'],
         Post::class         => ['thumbnail'],
+        Category::class     => ['image'],
         AbstractFile::class => ['filePath'],
     ];
 

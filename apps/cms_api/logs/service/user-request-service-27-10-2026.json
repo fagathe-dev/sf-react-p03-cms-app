@@ -1,0 +1,90 @@
+[
+    {
+        "id": "LOG_20261027005458_6adfe852ddc2c",
+        "level": "info",
+        "content": {
+            "message": "Demande utilisateur créée avec succès",
+            "data": {
+                "user_id": "01a17aa3-7bc1-76d9-b7b9-20b6bf0ba525",
+                "type": "password_reset",
+                "is_otp": false,
+                "expires_at": "2026-10-30 00:54:58"
+            }
+        },
+        "context": {
+            "device": "Terminal \/ CLI",
+            "browser": "Console",
+            "method": "CLI",
+            "action": "user_request.create.success",
+            "origin": "service\/user-request-service"
+        },
+        "timestamp": "2026-10-27 00:54:58"
+    },
+    {
+        "id": "LOG_20261027005753_6adfe90258cc4",
+        "level": "info",
+        "content": {
+            "message": "Demande utilisateur créée avec succès",
+            "data": {
+                "user_id": "01a17aa3-7bc1-76d9-b7b9-20b6bf0ba525",
+                "type": "otp_login",
+                "is_otp": true,
+                "expires_at": "2026-10-27 00:59:23"
+            }
+        },
+        "context": {
+            "ip": "128.79.243.31",
+            "device": "Desktop",
+            "browser": "Edge",
+            "url": "https:\/\/react-cms-api.dev.frederickagathe.fr\/api\/auth\/login-code",
+            "method": "POST",
+            "action": "user_request.create.success",
+            "origin": "service\/user-request-service"
+        },
+        "timestamp": "2026-10-27 00:57:53"
+    },
+    {
+        "id": "LOG_20261027022550_6adffd9ee1a17",
+        "level": "info",
+        "content": {
+            "message": "Demande utilisateur créée avec succès",
+            "data": {
+                "user_id": "01a17aa3-7bc1-76d9-b7b9-20b6bf0ba525",
+                "type": "otp_login",
+                "is_otp": true,
+                "expires_at": "2026-10-27 02:27:19"
+            }
+        },
+        "context": {
+            "ip": "128.79.243.31",
+            "device": "Desktop",
+            "browser": "Edge",
+            "url": "https:\/\/react-cms-api.dev.frederickagathe.fr\/api\/auth\/login-code",
+            "method": "POST",
+            "action": "user_request.create.success",
+            "origin": "service\/user-request-service"
+        },
+        "timestamp": "2026-10-27 02:25:50"
+    },
+    {
+        "id": "LOG_20261027034732_6ae010c457a01",
+        "level": "info",
+        "content": {
+            "message": "Demande utilisateur créée avec succès",
+            "data": {
+                "user_id": "01a17b41-7cc4-72c9-b5af-f7facf128882",
+                "type": "password_reset",
+                "is_otp": false,
+                "expires_at": "2026-10-30 03:47:32"
+            }
+        },
+        "context": {
+            "device": "Terminal \/ CLI",
+            "browser": "Console",
+            "method": "CLI",
+            "action": "user_request.create.success",
+            "origin": "service\/user-request-service"
+        },
+        "timestamp": "2026-10-27 03:47:32"
+    }
+]

@@ -1,0 +1,214 @@
+[
+    {
+        "id": "LOG_20261027005754_6adfe9020f3ab",
+        "level": "debug",
+        "content": {
+            "message": "Tentative de récupération IP via API",
+            "service": "http:\/\/httpbin.org\/ip"
+        },
+        "context": {
+            "device": "Desktop",
+            "browser": "Edge",
+            "url": "https:\/\/react-cms-api.dev.frederickagathe.fr\/api\/auth\/login-code",
+            "method": "POST",
+            "action": "ip.fetch.attempt",
+            "origin": "ip-checker\/find-ip"
+        },
+        "timestamp": "2026-10-27 00:57:54"
+    },
+    {
+        "id": "LOG_20261027005754_6adfe9023d26a",
+        "level": "debug",
+        "content": {
+            "message": "Réponse cURL reçue",
+            "service": "http:\/\/httpbin.org\/ip",
+            "http_code": 200,
+            "duration_ms": 186.32
+        },
+        "context": {
+            "device": "Desktop",
+            "browser": "Edge",
+            "url": "https:\/\/react-cms-api.dev.frederickagathe.fr\/api\/auth\/login-code",
+            "method": "POST",
+            "action": "ip.curl.success",
+            "origin": "ip-checker\/find-ip"
+        },
+        "timestamp": "2026-10-27 00:57:54"
+    },
+    {
+        "id": "LOG_20261027005754_6adfe902510fe",
+        "level": "info",
+        "content": {
+            "message": "IP récupérée avec succès via API",
+            "service": "http:\/\/httpbin.org\/ip"
+        },
+        "context": {
+            "device": "Desktop",
+            "browser": "Edge",
+            "url": "https:\/\/react-cms-api.dev.frederickagathe.fr\/api\/auth\/login-code",
+            "method": "POST",
+            "action": "ip.fetch.success",
+            "origin": "ip-checker\/find-ip"
+        },
+        "timestamp": "2026-10-27 00:57:54"
+    },
+    {
+        "id": "LOG_20261027022550_6adffd9eae40f",
+        "level": "debug",
+        "content": {
+            "message": "Tentative de récupération IP via API",
+            "service": "http:\/\/httpbin.org\/ip"
+        },
+        "context": {
+            "device": "Desktop",
+            "browser": "Edge",
+            "url": "https:\/\/react-cms-api.dev.frederickagathe.fr\/api\/auth\/login-code",
+            "method": "POST",
+            "action": "ip.fetch.attempt",
+            "origin": "ip-checker\/find-ip"
+        },
+        "timestamp": "2026-10-27 02:25:50"
+    },
+    {
+        "id": "LOG_20261027022550_6adffd9edd34c",
+        "level": "debug",
+        "content": {
+            "message": "Réponse cURL reçue",
+            "service": "http:\/\/httpbin.org\/ip",
+            "http_code": 200,
+            "duration_ms": 191.69
+        },
+        "context": {
+            "device": "Desktop",
+            "browser": "Edge",
+            "url": "https:\/\/react-cms-api.dev.frederickagathe.fr\/api\/auth\/login-code",
+            "method": "POST",
+            "action": "ip.curl.success",
+            "origin": "ip-checker\/find-ip"
+        },
+        "timestamp": "2026-10-27 02:25:50"
+    },
+    {
+        "id": "LOG_20261027022550_6adffd9edd5d0",
+        "level": "info",
+        "content": {
+            "message": "IP récupérée avec succès via API",
+            "service": "http:\/\/httpbin.org\/ip"
+        },
+        "context": {
+            "device": "Desktop",
+            "browser": "Edge",
+            "url": "https:\/\/react-cms-api.dev.frederickagathe.fr\/api\/auth\/login-code",
+            "method": "POST",
+            "action": "ip.fetch.success",
+            "origin": "ip-checker\/find-ip"
+        },
+        "timestamp": "2026-10-27 02:25:50"
+    },
+    {
+        "id": "LOG_20261027022625_6adffdc1441d6",
+        "level": "debug",
+        "content": {
+            "message": "Tentative de récupération IP via API",
+            "service": "http:\/\/httpbin.org\/ip"
+        },
+        "context": {
+            "device": "Desktop",
+            "browser": "Edge",
+            "url": "https:\/\/react-cms-api.dev.frederickagathe.fr\/api\/auth\/login-code\/verify",
+            "method": "POST",
+            "action": "ip.fetch.attempt",
+            "origin": "ip-checker\/find-ip"
+        },
+        "timestamp": "2026-10-27 02:26:25"
+    },
+    {
+        "id": "LOG_20261027022625_6adffdc1726d2",
+        "level": "debug",
+        "content": {
+            "message": "Réponse cURL reçue",
+            "service": "http:\/\/httpbin.org\/ip",
+            "http_code": 200,
+            "duration_ms": 188.58
+        },
+        "context": {
+            "device": "Desktop",
+            "browser": "Edge",
+            "url": "https:\/\/react-cms-api.dev.frederickagathe.fr\/api\/auth\/login-code\/verify",
+            "method": "POST",
+            "action": "ip.curl.success",
+            "origin": "ip-checker\/find-ip"
+        },
+        "timestamp": "2026-10-27 02:26:25"
+    },
+    {
+        "id": "LOG_20261027022625_6adffdc172966",
+        "level": "info",
+        "content": {
+            "message": "IP récupérée avec succès via API",
+            "service": "http:\/\/httpbin.org\/ip"
+        },
+        "context": {
+            "device": "Desktop",
+            "browser": "Edge",
+            "url": "https:\/\/react-cms-api.dev.frederickagathe.fr\/api\/auth\/login-code\/verify",
+            "method": "POST",
+            "action": "ip.fetch.success",
+            "origin": "ip-checker\/find-ip"
+        },
+        "timestamp": "2026-10-27 02:26:25"
+    },
+    {
+        "id": "LOG_20261027034823_6ae010f73a772",
+        "level": "debug",
+        "content": {
+            "message": "Tentative de récupération IP via API",
+            "service": "http:\/\/httpbin.org\/ip"
+        },
+        "context": {
+            "device": "Desktop",
+            "browser": "Edge",
+            "url": "https:\/\/react-cms-api.dev.frederickagathe.fr\/api\/auth\/reset-password",
+            "method": "POST",
+            "action": "ip.fetch.attempt",
+            "origin": "ip-checker\/find-ip"
+        },
+        "timestamp": "2026-10-27 03:48:23"
+    },
+    {
+        "id": "LOG_20261027034823_6ae010f767999",
+        "level": "debug",
+        "content": {
+            "message": "Réponse cURL reçue",
+            "service": "http:\/\/httpbin.org\/ip",
+            "http_code": 200,
+            "duration_ms": 183.87
+        },
+        "context": {
+            "device": "Desktop",
+            "browser": "Edge",
+            "url": "https:\/\/react-cms-api.dev.frederickagathe.fr\/api\/auth\/reset-password",
+            "method": "POST",
+            "action": "ip.curl.success",
+            "origin": "ip-checker\/find-ip"
+        },
+        "timestamp": "2026-10-27 03:48:23"
+    },
+    {
+        "id": "LOG_20261027034823_6ae010f767ed8",
+        "level": "info",
+        "content": {
+            "message": "IP récupérée avec succès via API",
+            "service": "http:\/\/httpbin.org\/ip"
+        },
+        "context": {
+            "device": "Desktop",
+            "browser": "Edge",
+            "url": "https:\/\/react-cms-api.dev.frederickagathe.fr\/api\/auth\/reset-password",
+            "method": "POST",
+            "action": "ip.fetch.success",
+            "origin": "ip-checker\/find-ip"
+        },
+        "timestamp": "2026-10-27 03:48:23"
+    }
+]

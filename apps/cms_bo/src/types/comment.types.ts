@@ -20,6 +20,14 @@ export interface Comment extends ConfigurableEntity<CommentSettings>, FlaggableE
   status: CommentStatus;
   createdAt: IsoDateString;
   updatedAt: IsoDateString | null;
+  /** Article commenté réduit à son identité (Comment::getPostSummary, groupe comment.read) */
+  postSummary?: CommentPostSummary | null;
+}
+
+export interface CommentPostSummary {
+  id: Uuid;
+  title: string | null;
+  slug: string | null;
 }
 
 // --- DTOs CommentService ---

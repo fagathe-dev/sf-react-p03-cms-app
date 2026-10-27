@@ -1,5 +1,5 @@
 import { ApiError } from '@/services/apiError';
-import { createCategory, updateCategory } from '@/services/category.api';
+import { createCategory, deleteCategoryImage, updateCategory, uploadCategoryImage } from '@/services/category.api';
 import { Category, SaveCategoryPayload } from '@/types';
 import { Alert, Button, Card, Icon, TextareaField, TextField, ToggleField } from '@/ui/components';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { COLOR_VALUES } from '../constants';
 import { slugSchema } from '../schemas';
+import { CategoryImageField } from './CategoryImageField';
 import { ColorPicker } from './ColorPicker';
 import * as S from './Taxonomy.styles';
 
@@ -62,6 +63,18 @@ export const CategoryForm = ({ category }: CategoryFormProps) => {
 
   const icon = watch('icon');
 
+  // Image : envoyée (ou retirée) après l'enregistrement, la catégorie devant exister pour l'upload
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [isImageRemoved, setIsImageRemoved] = useState(false);
+
+  const syncImage = async (saved: Category): Promise<void> => {
+    if (imageFile) {
+      await uploadCategoryImage(saved.id, imageFile);
+    } else if (isImageRemoved && saved.image) {
+      await deleteCategoryImage(saved.id);
+    }
+  };
+
   const onSubmit = async (data: CategoryFormData) => {
     setApiError(null);
 
@@ -77,16 +90,9 @@ export const CategoryForm = ({ category }: CategoryFormProps) => {
       },
     };
 
+    let saved: Category;
     try {
-      const saved = category ? await updateCategory(category.id, payload) : await createCategory(payload);
-
-      navigate('/categories', {
-        state: {
-          successMessage: isEdit
-            ? `La catégorie « ${saved.name} » a été mise à jour.`
-            : `La catégorie « ${saved.name} » a été créée.`,
-        },
-      });
+      saved = category ? await updateCategory(category.id, payload) : await createCategory(payload);
     } catch (err) {
       if (err instanceof ApiError) {
         API_FIELDS.forEach((field) => {
@@ -95,7 +101,31 @@ export const CategoryForm = ({ category }: CategoryFormProps) => {
         });
       }
       setApiError(err instanceof Error ? err.message : "Erreur lors de l'enregistrement de la catégorie");
+      return;
     }
+
+    try {
+      await syncImage(saved);
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : "Erreur lors de l'envoi de l'image";
+      const imageError = `La catégorie a été enregistrée, mais pas son image : ${reason}`;
+
+      // Création : on bascule sur l'édition pour ne pas recréer la catégorie au prochain envoi
+      if (!category) {
+        navigate(`/categories/${saved.id}/edit`, { replace: true, state: { imageError } });
+      } else {
+        setApiError(imageError);
+      }
+      return;
+    }
+
+    navigate('/categories', {
+      state: {
+        successMessage: isEdit
+          ? `La catégorie « ${saved.name} » a été mise à jour.`
+          : `La catégorie « ${saved.name} » a été créée.`,
+      },
+    });
   };
 
   return (
@@ -135,10 +165,19 @@ export const CategoryForm = ({ category }: CategoryFormProps) => {
             {...register('description')}
           />
 
+          <CategoryImageField
+            currentImage={category?.image ?? null}
+            file={imageFile}
+            isRemoved={isImageRemoved}
+            icon={icon}
+            onFileChange={setImageFile}
+            onRemoveChange={setIsImageRemoved}
+          />
+
           <TextField
-            label="Icône"
+            label="Icône (à défaut d'image)"
             placeholder="Ex : folder-outline"
-            hint="Nom d'une icône Material Design Icons (sans le préfixe mdi-)."
+            hint="Nom d'une icône Material Design Icons (sans le préfixe mdi-), affichée quand la catégorie n'a pas d'image."
             error={errors.icon?.message}
             {...register('icon')}
           />

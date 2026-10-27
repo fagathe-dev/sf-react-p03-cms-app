@@ -1,0 +1,46 @@
+[
+    {
+        "id": "LOG_20261027005504_6adfe858379a3",
+        "level": "info",
+        "content": {
+            "message": "E-mail \"Votre compte administrateur a été créé\" envoyé.",
+            "data": {
+                "handler": "Fagathe\\CmsCore\\Mailer\\Handler\\AdminAccountCreatedMailHandler",
+                "template": "@CmsCore\/emails\/admin\/account_created.html.twig",
+                "recipients": [
+                    "fagathe77@gmail.com"
+                ]
+            }
+        },
+        "context": {
+            "device": "Terminal \/ CLI",
+            "browser": "Console",
+            "method": "CLI",
+            "action": "mailer.send_success",
+            "origin": "handler\/admin-account-created-mail-handler"
+        },
+        "timestamp": "2026-10-27 00:55:04"
+    },
+    {
+        "id": "LOG_20261027034733_6ae010c575ca3",
+        "level": "info",
+        "content": {
+            "message": "E-mail \"Votre compte administrateur a été créé\" envoyé.",
+            "data": {
+                "handler": "Fagathe\\CmsCore\\Mailer\\Handler\\AdminAccountCreatedMailHandler",
+                "template": "@CmsCore\/emails\/admin\/account_created.html.twig",
+                "recipients": [
+                    "fagathe77@gmail.com"
+                ]
+            }
+        },
+        "context": {
+            "device": "Terminal \/ CLI",
+            "browser": "Console",
+            "method": "CLI",
+            "action": "mailer.send_success",
+            "origin": "handler\/admin-account-created-mail-handler"
+        },
+        "timestamp": "2026-10-27 03:47:33"
+    }
+]

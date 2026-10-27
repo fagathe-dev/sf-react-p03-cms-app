@@ -1,0 +1,50 @@
+[
+    {
+        "id": "LOG_20261027005754_6adfe902a3dca",
+        "level": "info",
+        "content": {
+            "message": "E-mail \"Votre code de connexion : 366446\" envoyé.",
+            "data": {
+                "handler": "Fagathe\\CmsCore\\Mailer\\Handler\\LoginCodeMailHandler",
+                "template": "@CmsCore\/emails\/auth\/login_code.html.twig",
+                "recipients": [
+                    "fagathe77@gmail.com"
+                ]
+            }
+        },
+        "context": {
+            "ip": "128.79.243.31",
+            "device": "Desktop",
+            "browser": "Edge",
+            "url": "https:\/\/react-cms-api.dev.frederickagathe.fr\/api\/auth\/login-code",
+            "method": "POST",
+            "action": "mailer.send_success",
+            "origin": "handler\/login-code-mail-handler"
+        },
+        "timestamp": "2026-10-27 00:57:54"
+    },
+    {
+        "id": "LOG_20261027022553_6adffda18c56a",
+        "level": "info",
+        "content": {
+            "message": "E-mail \"Votre code de connexion : 778270\" envoyé.",
+            "data": {
+                "handler": "Fagathe\\CmsCore\\Mailer\\Handler\\LoginCodeMailHandler",
+                "template": "@CmsCore\/emails\/auth\/login_code.html.twig",
+                "recipients": [
+                    "fagathe77@gmail.com"
+                ]
+            }
+        },
+        "context": {
+            "ip": "128.79.243.31",
+            "device": "Desktop",
+            "browser": "Edge",
+            "url": "https:\/\/react-cms-api.dev.frederickagathe.fr\/api\/auth\/login-code",
+            "method": "POST",
+            "action": "mailer.send_success",
+            "origin": "handler\/login-code-mail-handler"
+        },
+        "timestamp": "2026-10-27 02:25:53"
+    }
+]

@@ -1,4 +1,6 @@
+export * from './admin';
 export * from './auth';
+export * from './dashboard';
 export * from './moderation';
 export * from './post';
 export * from './search';

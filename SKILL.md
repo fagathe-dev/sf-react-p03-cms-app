@@ -164,7 +164,8 @@ Toutes les classes de service sont `final` (sauf `PostViewTracker` si destiné �
   - filtrage anti-bots (`BOT_PATTERN`, headers `Purpose` / `Sec-Purpose` prefetch, `DetectDevice` CLI) ;
   - empreinte SHA-256 (`IPChecker` + User-Agent + User ID + `appSecret`) ;
   - cookie journalier (`viewed_<hash>`).
-- **`AttachmentFileService`** — Validation MIME/taille via `UploaderValidationService` (50 Mo max média, 10 Mo max miniature) et stockage via `UploaderService`.
+- **`AttachmentFileService`** — Validation MIME/taille via `UploaderValidationService` (50 Mo max média, 10 Mo max miniature, 5 Mo max image de catégorie) et stockage via `UploaderService`. Les chemins relatifs sont stockés en base, `FileUrlNormalizer` les expose en URL absolues (`User::$avatar`, `Post::$thumbnail`, `Category::$image`, `AbstractFile::$filePath`).
+- **Image de catégorie** — `Category::$image` (upload `POST /categories/{id}/image`, retrait `DELETE /categories/{id}/image`, dossier `uploads/categories/{id}/`) ; à défaut d'image, l'icône `settings.icon` est affichée. Formats `Dto\Common\SafeImageMimeTypes` (sans SVG, partagés avec l'avatar).
 - **`SeoMetadataService`** — CRUD `SeoMetadata` et génération de paquets complets `{ meta, jsonLd }` via `SeoSchemaGenerator` et `JsonLdGenerator` (`buildForArticle`, `buildForTaxonomy`, `buildForStaticPage`) pour les entités implémentant `ArticleSeoInterface` ou `TaxonomySeoInterface`.
 - **`SearchService`** — Recherche Full-Text agrégée (`globalSearch`) retournant `{ posts, categories, tags, users }` avec filtrage selon `$isFront` (`onlyPublished` / `onlyVerified`).
 - **`AuthService` & `UserRequestService`** — Parcours d'authentification (la connexion par mot de passe est gérée par `ApiAuthenticator`, voir 2.2) :
@@ -174,6 +175,8 @@ Toutes les classes de service sont `final` (sauf `PostViewTracker` si destiné �
   - Réponses constantes sur les endpoints acceptant un identifiant (anti-énumération) ; compteurs d'essais et délais d'envoi dans le cache applicatif (`CacheItemPoolInterface`).
 - **`AccountService` & `UserService`** — Gestion du profil connecté (`/account`) et administration des membres du back-office (`/users`, filtré par `getManageableRoles()`).
   - **Suppression du compte confirmée par code** : `requestAccountDeletion` (`POST /account/delete-request`) envoie un code à 6 chiffres valable **10 min** (`UserRequestTypeEnum::AccountDeletion`, un envoi toutes les 30 s) ; `deleteAccount` (`DELETE /account`, `DeleteAccountDto { code }`) vérifie le code pour l'utilisateur connecté (5 essais avant révocation) puis supprime le compte et son avatar.
+- **`DashboardService`** — Données du tableau de bord (`GET /dashboard`) : itère les sections `Fagathe\CmsCore\Dashboard\DashboardSectionProviderInterface` (`#[AutowireIterator('cms.dashboard_section')]`), fusionne `provide($user)` des sections qui `supports($user)` et leurs groupes de sérialisation. Une section refusée est **absente** de la réponse (le back-office masque le widget). Sections (`Dashboard\Section\*`) : `KpisSection`, `EditorialActivitySection`, `TopPostsSection`, `TaxonomySection` (tous), `ModerationQueueSection` (`ROLE_MODERATOR`), `SeoAlertsSection` et `UsersOverviewSection` (`ROLE_MANAGER`) ; rôles vérifiés via `AuthorizationCheckerInterface`. **Ajouter un bloc = une classe `*Section`.** Les agrégations vivent dans les traits `Repository\Dashboard\<Entité>DashboardQueriesTrait` (aucun `EntityManagerInterface` dans les services). Groupe `dashboard.read` : expose `settings` des articles listés (`is_featured`, `moderation_note`).
+- **`LogViewerService`** — Lecture des logs JSON de `Fagathe\CorePhp\Logger` (`%core_php.logger.logs_dir%`) : arborescence par date (`getTree`) et entrées d'un fichier identifié par sa date et son chemin pointé (`getFile('27-10-2026', 'service.post-service')`), avec refus de tout chemin hors du dossier de logs (`realpath`).
 - **`AdminUserManager`** (`Security\`) — Implémentation de `Fagathe\CorePhp\Command\AdminUserManagerInterface` pour la commande `core-php:create-admin-user` (`#[AsAlias]` obligatoire : l'interface vit dans core-php). L'administrateur est créé vérifié et reçoit un récapitulatif avec un lien `PasswordReset` de **72h** pour choisir son mot de passe ; un échec d'envoi est journalisé sans annuler la création.
 
 ### 1.4 bis. Mailer (`Fagathe\CmsCore\Mailer`, `Dto\Mail`, `templates/emails`)
@@ -191,6 +194,8 @@ Les e-mails reposent sur `Fagathe\CorePhp\Mailer\AbstractMailerHandler` (validat
 
 - **Open/Closed** : chaque handler implémente `MailHandlerInterface` (`#[AutoconfigureTag]`, `getDtoClass()`). `MailDispatcher` les retrouve via un locator indexé par classe de DTO : **ajouter un e-mail = un DTO + un handler + un template**, `MailDispatcher` n'est pas modifié.
 - `MailDispatcher::dispatch()` lève `MailerExceptionInterface` ; `dispatchSilently()` n'échoue jamais (e-mails non bloquants).
+- **Aperçu des e-mails** (`Mailer\Preview`) : une classe `*MailPreview` par e-mail implémente `MailPreviewInterface` (`#[AutoconfigureTag]`, `getSlug()`, `createDto()` avec des données factices). `Service\EmailPreviewService` les découvre (`#[AutowireIterator]` indexé par slug), construit l'e-mail via `MailDispatcher::createEmail()` et le rend avec le `BodyRenderer` de l'envoi réel (aucun envoi). **Ajouter un e-mail = ajouter aussi son `*MailPreview`.**
+- `Mailer\NullTransportWarningListener` journalise un avertissement (`logs/mailer/`) quand un e-mail part vers `MAILER_DSN=null://null` (le handler journalise sinon « envoyé »).
 - Les liens des e-mails sont construits par `Generator\AuthLinkGenerator` à partir de `cms_core.app_url` (`/verify-email`, `/reset-password`, `/login`).
 - Prérequis portés par `cms-core` : `symfony/twig-bundle` (namespace `@CmsCore`) et `symfony/translation`.
 
@@ -232,6 +237,8 @@ return $this->json($res->data, $res->status, $res->headers, $res->context);
 ```
  
 - **Exception unique** : `HealthCheckController` (`GET /health-check`) vérifie la latence DB (`SELECT 1`) et les droits d'écriture sur `/var`.
+- **Tableau de bord** : `DashboardController` (`GET /dashboard`, invocable, `#[IsGranted('ROLE_CONTRIBUTOR')]`) → `DashboardService::getDashboardData()`.
+- **Outils Super Admin** (`App\Controller\Admin\*`, `#[IsGranted('ROLE_SUPER_ADMIN')]`) : `EmailPreviewController` (`GET /admin/emails`, `GET /admin/emails/{slug}` → HTML rendu, affiché par le back-office dans une iframe `sandbox`) et `LogController` (`GET /admin/logs`, `GET /admin/logs/{date}/{filePath}`).
 ### 2.2. Sécurité & authentification (`config/packages/security.yaml`)
  
 - **Pas de firewall `json_login`** : `POST /api/auth/login` est interceptée par le custom authenticator `Fagathe\CmsCore\Security\ApiAuthenticator` (la route `AuthController::login` n'existe que pour le routeur).
@@ -255,6 +262,8 @@ return $this->json($res->data, $res->status, $res->headers, $res->context);
  
 | Fichier | Contenu |
 |---|---|
+| `dashboard.types.ts` | `DashboardResponse` (clés optionnelles = sections soumises à un rôle), `DashboardKpis`, `DashboardPostCounts`, `CategoryDistributionItem`, `PopularTagItem`, `SeoAlertsSummary`, `UsersOverviewSummary`, `HealthCheckResponse` |
+| `admin.types.ts` | Outils Super Admin : `EmailPreview`, `EmailAddress` (aperçu des e-mails), `LogDate`, `LogNode`, `LogEntry`, `LogLevel`, `LogException` (logs de l'API) |
 | `auth.types.ts` | `User`, `UserSummary`, `UserRole`, authentification (`LoginPayload`, `RegisterPayload`, `AuthResponse`, OTP, `ResetPassword`), administration d'utilisateurs (`CreateUserPayload`, `UpdateUserPayload`) |
 | `common.types.ts` | `Uuid`, `IsoDateString`, `FlagReason`, `FlagEntry`, `ConfigurableEntity`, `FlaggableEntity`, `LikableEntity`, `PaginatedResponse`, `PaginationMeta` |
 | `post.types.ts` | `Post`, `PostListItem`, `BlocContent`, `PostSettings`, `PostStatus`, `BlockType`, `SavePostPayload`, `SaveBlocContentPayload`, `ReviewPostPayload` |
@@ -271,6 +280,9 @@ Le dossier **`src/pages/auth/` est le modèle de référence**. Chaque fonctionn
  
 ```text
 src/pages/
+├── admin/                           # Outils ROLE_SUPER_ADMIN : /admin/emails (aperçu des e-mails), /admin/logs
+├── dashboard/                       # Tableau de bord « / » (page d'atterrissage) : widgets déclarés dans widgets/registry.ts
+│                                    # (ajouter un widget = un composant + une entrée), préférences par utilisateur (useDashboardLayout)
 ├── auth/
 │   ├── components/                  # Sous-composants propres à la fonctionnalité
 │   │   ├── ChangeAvatarForm.tsx

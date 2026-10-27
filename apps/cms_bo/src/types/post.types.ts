@@ -77,12 +77,15 @@ export interface PostListItem extends FlaggableEntity, LikableEntity {
   trashedAt: IsoDateString | null;
   createdAt: IsoDateString;
   viewsCount: number;
+  /** Exposés par le groupe dashboard.read (absents des listes post.list classiques) */
+  settings?: PostSettings;
 }
 
 /**
  * Représentation complète d'un article — Groupe ['post.read', 'file.read', 'bloc.read']
  */
 export interface Post extends PostListItem, ConfigurableEntity<PostSettings> {
+  settings: PostSettings;
   updatedAt: IsoDateString | null;
   blocks: BlocContent[];
   medias: PostMedia[];

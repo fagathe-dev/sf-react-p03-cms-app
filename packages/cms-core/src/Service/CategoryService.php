@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Fagathe\CmsCore\Service;
 
 use Fagathe\CmsCore\Dto\Category\SaveCategoryDto;
+use Fagathe\CmsCore\Dto\Category\UploadCategoryImageDto;
 use Fagathe\CmsCore\Entity\Category;
 use Fagathe\CmsCore\Repository\CategoryRepository;
 use Fagathe\CmsCore\Security\Voter\TaxonomyVoter;
@@ -13,6 +14,7 @@ use Fagathe\CorePhp\Http\RequestTrait;
 use Fagathe\CorePhp\Http\ResponseTrait;
 use Fagathe\CorePhp\Trait\DatetimeTrait;
 use Fagathe\CorePhp\Trait\LoggerTrait;
+use Fagathe\CorePhp\Uploader\FileUploadException;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -32,6 +34,7 @@ final class CategoryService
         private readonly ValidatorInterface $validator,
         private readonly SluggerInterface $slugger,
         private readonly Security $security,
+        private readonly AttachmentFileService $attachmentService,
     ) {}
 
     public function list(Request $request): object
@@ -157,11 +160,19 @@ final class CategoryService
             return $this->sendForbidden('Vous n\'avez pas les droits pour supprimer cette catégorie.');
         }
 
+        $image = $category->getImage();
+        $imageDirectory = 'categories/' . (string) $category->getId();
+
         if (!$this->categoryRepository->remove($category, flush: true)) {
             return $this->sendJson(
                 ['message' => 'Erreur interne lors de la suppression de la catégorie.'],
                 Response::HTTP_INTERNAL_SERVER_ERROR
             );
+        }
+
+        // Fichier supprimé une fois la catégorie effacée en base (dossier propre à la catégorie)
+        if ($image !== null) {
+            $this->attachmentService->deleteRawPath($image, $imageDirectory);
         }
 
         $this->generateLog(
@@ -174,6 +185,65 @@ final class CategoryService
         );
 
         return $this->sendNoContent();
+    }
+
+    /**
+     * Upload (ou remplacement) de l'image de la catégorie : champ multipart "image" (ou "file").
+     */
+    public function uploadImage(string $id, Request $request): object
+    {
+        $category = Uuid::isValid($id) ? $this->categoryRepository->find(Uuid::fromString($id)) : null;
+        if (!$category instanceof Category) {
+            return $this->notFoundResponse('Catégorie introuvable.');
+        }
+
+        if (!$this->security->isGranted(TaxonomyVoter::MANAGE_CATEGORY, $category)) {
+            return $this->sendForbidden('Vous n\'avez pas les droits pour modifier cette catégorie.');
+        }
+
+        $dto = new UploadCategoryImageDto($request->files->get('image') ?? $request->files->get('file'));
+
+        $violations = $this->validator->validate($dto);
+        if (count($violations) > 0) {
+            return $this->sendViolations($violations);
+        }
+
+        try {
+            $this->attachmentService->uploadCategoryImage($dto->file, $category);
+        } catch (FileUploadException $e) {
+            return $this->sendJson(['message' => $e->getMessage()], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        if (!$this->categoryRepository->save($category, flush: true, isCreation: false)) {
+            return $this->sendJson(
+                ['message' => 'Erreur interne lors de l\'enregistrement de l\'image.'],
+                Response::HTTP_INTERNAL_SERVER_ERROR
+            );
+        }
+
+        return $this->sendJson($category, Response::HTTP_OK, context: ['groups' => ['category.read']]);
+    }
+
+    /**
+     * Retire l'image de la catégorie : l'icône (settings.icon) est de nouveau affichée.
+     */
+    public function deleteImage(string $id): object
+    {
+        $category = Uuid::isValid($id) ? $this->categoryRepository->find(Uuid::fromString($id)) : null;
+        if (!$category instanceof Category) {
+            return $this->notFoundResponse('Catégorie introuvable.');
+        }
+
+        if (!$this->security->isGranted(TaxonomyVoter::MANAGE_CATEGORY, $category)) {
+            return $this->sendForbidden('Vous n\'avez pas les droits pour modifier cette catégorie.');
+        }
+
+        if ($category->getImage() !== null) {
+            $this->attachmentService->deleteCategoryImage($category);
+            $this->categoryRepository->save($category, flush: true, isCreation: false);
+        }
+
+        return $this->sendJson($category, Response::HTTP_OK, context: ['groups' => ['category.read']]);
     }
 
     private function hydrateCategory(Category $category, SaveCategoryDto $dto, bool $isNew): void

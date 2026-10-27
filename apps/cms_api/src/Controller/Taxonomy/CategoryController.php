@@ -56,4 +56,26 @@ final class CategoryController extends AbstractController
 
         return $this->json($res->data, $res->status, $res->headers, $res->context);
     }
+
+    /**
+     * Upload (multipart, champ "image") ou remplacement de l'image de la catégorie.
+     */
+    #[Route('/{id}/image', name: 'upload_image', methods: ['POST'])]
+    public function uploadImage(string $id, Request $request): JsonResponse
+    {
+        $res = $this->service->uploadImage($id, $request);
+
+        return $this->json($res->data, $res->status, $res->headers, $res->context);
+    }
+
+    /**
+     * Retrait de l'image : l'icône de la catégorie reprend le relais.
+     */
+    #[Route('/{id}/image', name: 'delete_image', methods: ['DELETE'])]
+    public function deleteImage(string $id): JsonResponse
+    {
+        $res = $this->service->deleteImage($id);
+
+        return $this->json($res->data, $res->status, $res->headers, $res->context);
+    }
 }

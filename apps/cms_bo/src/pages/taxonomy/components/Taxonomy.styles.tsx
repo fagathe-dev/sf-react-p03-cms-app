@@ -31,6 +31,13 @@ export const FormActions = styled.div`
   margin-top: ${({ theme }) => theme.spacing[4]};
 `;
 
+/** Cellule « Nom » : visuel (image ou icône) suivi du nom et de la description */
+export const NameCell = styled.div`
+  display: flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing[3]};
+`;
+
 export const Slug = styled.code`
   font-family: ${({ theme }) => theme.typography.fonts.mono};
   font-size: ${({ theme }) => theme.typography.sizes.xs};

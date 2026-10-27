@@ -29,6 +29,11 @@ export const ROLE_LABELS: Record<UserRole, string> = {
 
 export const NAV_SECTIONS: NavGroupSection[] = [
   {
+    title: 'Pilotage',
+    // exact : sans lui, « / » serait actif sur toutes les routes
+    items: [{ label: 'Tableau de bord', to: '/', icon: 'view-dashboard-outline', exact: true }],
+  },
+  {
     title: 'Articles',
     items: [
       { label: 'Liste des articles', to: '/posts', icon: 'file-document-multiple-outline', exact: true },
@@ -64,5 +69,13 @@ export const NAV_SECTIONS: NavGroupSection[] = [
     title: 'Configuration & SEO',
     minRole: 'ROLE_MANAGER',
     items: [{ label: 'SEO & Schémas JSON-LD', to: '/seo', icon: 'search-web' }],
+  },
+  {
+    title: 'Super Admin',
+    minRole: 'ROLE_SUPER_ADMIN',
+    items: [
+      { label: 'Aperçu des e-mails', to: '/admin/emails', icon: 'email-search-outline' },
+      { label: "Logs de l'API", to: '/admin/logs', icon: 'text-box-search-outline' },
+    ],
   },
 ];

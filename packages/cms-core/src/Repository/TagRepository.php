@@ -2,6 +2,7 @@
 
 namespace Fagathe\CmsCore\Repository;
 
+use Fagathe\CmsCore\Repository\Dashboard\TagDashboardQueriesTrait;
 use Fagathe\CmsCore\Entity\Tag;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\Exception\ORMException;
@@ -18,7 +19,7 @@ use Symfony\Component\Uid\Uuid;
  */
 class TagRepository extends ServiceEntityRepository
 {
-    use DatetimeTrait, FullTextSearchTrait;
+    use DatetimeTrait, FullTextSearchTrait, TagDashboardQueriesTrait;
 
     public function __construct(ManagerRegistry $registry)
     {

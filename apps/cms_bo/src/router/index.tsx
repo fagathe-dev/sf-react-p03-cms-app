@@ -5,9 +5,12 @@ import {
   CategoryCreatePage,
   CategoryEditPage,
   CommentModerationPage,
+  DashboardPage,
+  EmailPreviewPage,
   ForgotPasswordPage,
   LoginPage,
   LogoutPage,
+  LogsPage,
   PostCreatePage,
   PostEditPage,
   PostModerationPage,
@@ -49,10 +52,10 @@ export const router = createBrowserRouter([
       {
         element: <AppLayout />,
         children: [
-          // Redirection racine vers la liste des articles
+          // Tableau de bord : page d'atterrissage après connexion (DashboardController)
           {
             path: '/',
-            element: <Navigate to="/posts" replace />,
+            element: <DashboardPage />,
           },
 
           // Recherche globale Full-Text (SearchController)
@@ -135,6 +138,17 @@ export const router = createBrowserRouter([
                 path: '/seo',
                 element: <SeoMetadataPage />,
               },
+            ],
+          },
+
+          // Outils Super Admin : aperçu des e-mails (EmailPreviewController) et logs de l'API (LogController)
+          {
+            path: '/admin',
+            element: <ProtectedRoute minRole="ROLE_SUPER_ADMIN" />,
+            children: [
+              { index: true, element: <Navigate to="/admin/emails" replace /> },
+              { path: 'emails', element: <EmailPreviewPage /> },
+              { path: 'logs', element: <LogsPage /> },
             ],
           },
 

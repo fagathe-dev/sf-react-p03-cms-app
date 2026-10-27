@@ -8,7 +8,6 @@ export const FormCard = styled.form`
   background-color: ${({ theme }) => theme.colors.background.surface};
   border: 1px solid ${({ theme }) => theme.colors.border.default};
   border-radius: ${({ theme }) => theme.radii.base};
-  max-width: 640px;
 `;
 
 export const FieldGrid = styled.div`

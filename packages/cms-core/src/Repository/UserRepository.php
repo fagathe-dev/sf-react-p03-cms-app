@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Fagathe\CmsCore\Repository;
 
+use Fagathe\CmsCore\Repository\Dashboard\UserDashboardQueriesTrait;
 use Fagathe\CmsCore\Entity\User;
 use Fagathe\CmsCore\Enum\Auth\UserRole;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -22,7 +23,7 @@ use Symfony\Component\Security\Core\User\UserInterface;
  */
 class UserRepository extends ServiceEntityRepository implements PasswordUpgraderInterface, UserLoaderInterface
 {
-    use DatetimeTrait, FullTextSearchTrait;
+    use DatetimeTrait, FullTextSearchTrait, UserDashboardQueriesTrait;
 
     public function __construct(ManagerRegistry $registry)
     {

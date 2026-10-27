@@ -1,3 +1,5 @@
 framework:
     mailer:
         dsn: '%env(MAILER_DSN)%'
+        # Envoi direct (synchrone) par le transport : jamais via Messenger, même s'il devenait installé
+        message_bus: false

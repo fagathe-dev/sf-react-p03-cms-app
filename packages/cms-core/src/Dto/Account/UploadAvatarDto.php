@@ -2,24 +2,16 @@
 
 namespace Fagathe\CmsCore\Dto\Account;
 
+use Fagathe\CmsCore\Dto\Common\SafeImageMimeTypes;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Validator\Constraints as Assert;
 
 final class UploadAvatarDto
 {
     /**
-     * MimeType::IMAGE_MIMES sans image/svg+xml : un SVG peut embarquer du JavaScript (XSS stockée).
+     * Sans image/svg+xml (voir SafeImageMimeTypes)
      */
-    public const ALLOWED_MIME_TYPES = [
-        'image/bmp',
-        'image/webp',
-        'image/tiff',
-        'image/png',
-        'image/gif',
-        'image/x-icon',
-        'image/jpeg',
-        'image/x-canon-cr2',
-    ];
+    public const ALLOWED_MIME_TYPES = SafeImageMimeTypes::ALL;
 
     public function __construct(
         #[Assert\NotNull(message: 'Veuillez sélectionner une image.')]

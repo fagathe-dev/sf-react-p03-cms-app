@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Fagathe\CmsCore\Service;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Fagathe\CmsCore\Dto\Common\SafeImageMimeTypes;
 use Fagathe\CmsCore\Entity\AbstractFile;
+use Fagathe\CmsCore\Entity\Category;
 use Fagathe\CmsCore\Entity\Post;
 use Fagathe\CmsCore\Entity\PostMedia;
 use Fagathe\CmsCore\Entity\User;
@@ -27,6 +29,7 @@ final class AttachmentFileService
 
     private const MAX_SIZE = 50 * 1024 * 1024; // 50 Mo
     private const MAX_THUMBNAIL_SIZE = 10 * 1024 * 1024; // 10 Mo
+    private const MAX_CATEGORY_IMAGE_SIZE = 5 * 1024 * 1024; // 5 Mo (UploadCategoryImageDto::MAX_SIZE)
 
     public function __construct(
         private readonly EntityManagerInterface $em,
@@ -106,6 +109,38 @@ final class AttachmentFileService
         return (string) $this->fileResolver->resolveUrl($uploadResult->relativePath);
     }
 
+    /**
+     * Upload et remplace l'image d'une catégorie (sans flush). Retourne son URL absolue.
+     *
+     * @throws FileUploadException
+     */
+    public function uploadCategoryImage(UploadedFile $file, Category $category): string
+    {
+        $result = (new UploaderValidationService(SafeImageMimeTypes::ALL, self::MAX_CATEGORY_IMAGE_SIZE))->validate($file);
+        if (!is_bool($result) && $result !== true) {
+            throw new FileUploadException(implode(' ', $result));
+        }
+
+        // L'ancienne image n'est supprimée par l'uploader qu'une fois la nouvelle déplacée
+        $subDir = self::categoryDirectory($category);
+        $uploadResult = $this->uploader
+            ->setUploadDirectory($subDir)
+            ->upload($file, $this->fileResolver->extractUploadedPath($category->getImage(), $subDir));
+
+        $category->setImage($uploadResult->relativePath)->setUpdatedAt($this->now());
+
+        return (string) $this->fileResolver->resolveUrl($uploadResult->relativePath);
+    }
+
+    /**
+     * Supprime le fichier de l'image d'une catégorie et la retire de l'entité (sans flush) : l'icône reprend le relais.
+     */
+    public function deleteCategoryImage(Category $category): void
+    {
+        $this->deleteRawPath($category->getImage(), self::categoryDirectory($category));
+        $category->setImage(null)->setUpdatedAt($this->now());
+    }
+
     public function delete(AbstractFile $file, bool $flush = true): bool
     {
         try {
@@ -175,5 +210,10 @@ final class AttachmentFileService
     private static function thumbnailDirectory(Post $post): string
     {
         return self::mediaDirectory($post) . '/thumbnail';
+    }
+
+    private static function categoryDirectory(Category $category): string
+    {
+        return 'categories/' . (string) $category->getId();
     }
 }

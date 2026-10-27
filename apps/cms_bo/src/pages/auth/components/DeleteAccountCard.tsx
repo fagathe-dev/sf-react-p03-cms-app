@@ -27,7 +27,6 @@ const DangerCard = styled.div`
   border: 1px solid #fecaca;
   background-color: #fef2f2;
   border-radius: ${({ theme }) => theme.radii.base};
-  max-width: 640px;
 `;
 
 const Header = styled.div`
@@ -140,11 +139,11 @@ export const DeleteAccountCard = () => {
   return (
     <DangerCard>
       <Header>
-        <div style={{ maxWidth: 420 }}>
-          <Title as="h4" style={{ margin: 0, color: '#991b1b' }}>
+        <div>
+          <Title as="h3" style={{ margin: 0, color: '#991b1b', marginBlockEnd: 5 }}>
             Supprimer définitivement le compte
           </Title>
-          <Text size="xs" style={{ color: '#b91c1c', marginTop: 4 }}>
+          <Text size="base" style={{ color: '#b91c1c', marginTop: 4, lineHeight: 0 }}>
             Cette action est irréversible et supprimera toutes vos données ainsi que vos fichiers stockés sur le
             serveur. Un code de confirmation vous sera envoyé par e-mail.
           </Text>
@@ -182,13 +181,7 @@ export const DeleteAccountCard = () => {
             />
           </div>
 
-          <Button
-            type="submit"
-            loading={isSubmitting}
-            disabled={expiresIn === 0}
-            fullWidth
-            style={DANGER_BUTTON_STYLE}
-          >
+          <Button type="submit" loading={isSubmitting} disabled={expiresIn === 0} fullWidth style={DANGER_BUTTON_STYLE}>
             Confirmer la suppression définitive
           </Button>
 

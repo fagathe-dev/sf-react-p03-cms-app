@@ -1,5 +1,7 @@
 export * from './CategoryForm';
+export * from './CategoryImageField';
 export * from './CategoryTable';
+export * from './CategoryVisual';
 export * from './ColorPicker';
 export * from './TagForm';
 export * from './TagTable';

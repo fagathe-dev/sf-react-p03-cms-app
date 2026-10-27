@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Fagathe\CmsCore\Repository;
 
+use Fagathe\CmsCore\Repository\Dashboard\SeoMetadataDashboardQueriesTrait;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\Exception\ORMException;
 use Doctrine\Persistence\ManagerRegistry;
@@ -16,7 +17,7 @@ use Fagathe\CorePhp\Trait\DatetimeTrait;
  */
 class SeoMetadataRepository extends ServiceEntityRepository
 {
-    use DatetimeTrait;
+    use DatetimeTrait, SeoMetadataDashboardQueriesTrait;
 
     public function __construct(ManagerRegistry $registry)
     {

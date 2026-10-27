@@ -20,6 +20,7 @@ import {
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTaxonomyList } from '../hooks';
+import { CategoryVisual } from './CategoryVisual';
 import * as S from './Taxonomy.styles';
 
 interface CategoryTableProps {
@@ -104,12 +105,17 @@ export const CategoryTable = ({ query }: CategoryTableProps) => {
               {items.map((category) => (
                 <TRow key={category.id}>
                   <Td>
-                    <Text weight="semibold">{category.name}</Text>
-                    {category.description && (
-                      <Text as="p" size="xs" style={{ margin: 0 }}>
-                        {category.description}
-                      </Text>
-                    )}
+                    <S.NameCell>
+                      <CategoryVisual image={category.image} icon={category.settings?.icon} />
+                      <div>
+                        <Text weight="semibold">{category.name}</Text>
+                        {category.description && (
+                          <Text as="p" size="xs" style={{ margin: 0 }}>
+                            {category.description}
+                          </Text>
+                        )}
+                      </div>
+                    </S.NameCell>
                   </Td>
                   <Td>
                     <S.Slug>{category.slug}</S.Slug>

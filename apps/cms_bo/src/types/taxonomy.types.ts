@@ -19,6 +19,7 @@ export type ColorEnum =
   | 'stone';
 
 export interface CategorySettings {
+  /** Icône MDI affichée à défaut d'image (Category::$image) */
   icon: string | null;
   color: ColorEnum | string | null;
   is_featured: boolean;
@@ -33,12 +34,17 @@ export interface CategorySummary {
   name: string;
   slug: string;
   description?: string | null;
+  /** URL absolue de l'image uploadée ; à défaut, settings.icon est affichée */
+  image?: string | null;
+  /** Exposés par le groupe category.list (absents des groupes post.*) */
+  settings?: CategorySettings;
 }
 
 /**
  * Groupe ['category.read']
  */
 export interface Category extends CategorySummary, ConfigurableEntity<CategorySettings> {
+  settings: CategorySettings;
   createdAt: IsoDateString;
   updatedAt: IsoDateString | null;
 }

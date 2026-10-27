@@ -48,6 +48,14 @@ class Category implements TaxonomySeoInterface
     #[Groups(['category.list', 'category.read'])]
     private ?string $description = null;
 
+    /**
+     * Chemin relatif de l'image uploadée (ex: uploads/categories/{id}/image.webp), résolu en URL absolue par
+     * FileUrlNormalizer. À défaut d'image, l'icône settings['icon'] est affichée.
+     */
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['category.list', 'category.read', 'post.read', 'post.list'])]
+    private ?string $image = null;
+
     #[ORM\Column]
     #[Groups(['category.read'])]
     private ?\DateTimeImmutable $createdAt = null;
@@ -115,6 +123,18 @@ class Category implements TaxonomySeoInterface
     public function setDescription(?string $description): static
     {
         $this->description = $description;
+
+        return $this;
+    }
+
+    public function getImage(): ?string
+    {
+        return $this->image;
+    }
+
+    public function setImage(?string $image): static
+    {
+        $this->image = $image;
 
         return $this;
     }

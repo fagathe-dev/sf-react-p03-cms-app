@@ -152,6 +152,25 @@ class Comment
         return $this;
     }
 
+    /**
+     * Article commenté, réduit à son identité (la relation complète n'est pas sérialisée).
+     *
+     * @return array{id: string, title: string|null, slug: string|null}|null
+     */
+    #[Groups(['comment.read'])]
+    public function getPostSummary(): ?array
+    {
+        if ($this->post === null) {
+            return null;
+        }
+
+        return [
+            'id'    => (string) $this->post->getId(),
+            'title' => $this->post->getTitle(),
+            'slug'  => $this->post->getSlug(),
+        ];
+    }
+
     public function getParent(): ?self
     {
         return $this->parent;

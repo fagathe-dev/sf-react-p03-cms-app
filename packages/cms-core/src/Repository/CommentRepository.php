@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Fagathe\CmsCore\Repository;
 
+use Fagathe\CmsCore\Repository\Dashboard\CommentDashboardQueriesTrait;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\Exception\ORMException;
 use Doctrine\Persistence\ManagerRegistry;
@@ -18,7 +19,7 @@ use Symfony\Bridge\Doctrine\Types\UuidType;
  */
 class CommentRepository extends ServiceEntityRepository
 {
-    use DatetimeTrait;
+    use DatetimeTrait, CommentDashboardQueriesTrait;
 
     public function __construct(ManagerRegistry $registry)
     {
